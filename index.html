@@ -4,9 +4,9 @@
     <title>Serverless, secure & persistent multichat</title>
 
     <!-- To efficiently implement sockets -->
-    <script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <!-- To easily manage dynamic rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 
     <!-- Integrate font styles -->
     <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
@@ -14,34 +14,186 @@
     <!-- Material Design stylesheets -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <script async src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
     <style>
         body {
             font-family: "Red Hat Display";
-            background-color: #ecf0f1;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
         }
 
-        div {
-            text-align: center;
-        }
-
-        p {
-            margin: 0.18em;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         #chatbox {
-            height: 25rem;
-            text-align: left;
-            width: 95%;
-            margin: 0 auto;
-            overflow-y: scroll;
+            height: 400px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .row {
+        .message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+
+        .file-message {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            color: #2e7d32;
+        }
+
+        .media-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .media-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            margin: 0;
-            padding: 0 2em;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .media-fullscreen img, .media-fullscreen video {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .user-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .user-item.active {
+            background-color: #e3f2fd;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+
+        .status-online {
+            background-color: #4caf50;
+        }
+
+        .status-offline {
+            background-color: #f44336;
+        }
+
+        .chat-input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .action-button {
+            margin-left: 5px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .progress-container {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .typing-indicator {
+            font-size: 0.8em;
+            color: #666;
+            font-style: italic;
+            height: 20px;
         }
     </style>
 </head>
@@ -50,87 +202,189 @@
     <div id="app">
         <div id="login" v-if="screen === 'login'">
             <div class="container">
-                <h1>Enter your username</h1>
-
                 <div class="row">
-                    <form v-on:submit="submitLogin">
-                        <div class="input-field col s8">
-                            <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
-                            <label for="username">My username</label>
+                    <div class="col s12 m6 offset-m3">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">Enter your details</span>
+                                
+                                <div class="center" @click="triggerProfilePicUpload">
+                                    <img :src="profilePicPreview || 'https://via.placeholder.com/150'" class="profile-pic">
+                                    <input type="file" id="profile-pic-upload" class="file-input" accept="image/*" @change="handleProfilePicChange">
+                                </div>
+                                
+                                <div class="input-field">
+                                    <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
+                                    <label for="username">Username</label>
+                                </div>
+                                
+                                <button v-bind:class="{ disabled: loading }" class="btn waves-effect waves-light blue" type="button" @click="submitLogin">
+                                    Login <i class="material-icons right">login</i>
+                                </button>
+                                
+                                <p v-if="loading" class="center">Connecting...</p>
+                                <p v-if="peerError" class="red-text center">{{ peerError }}</p>
+                            </div>
+                            <div class="card-action">
+                                <p class="center">Crafted with ❤️ by <a href="https://r.milon.pro" target="_blank" rel="noopener noreferrer">Rubilmax</a></p>
+                            </div>
                         </div>
-                        <button v-bind:class="{ disabled: loading }" class="btn-large waves-effect waves-light red col s4" type="submit">
-                            Login<i class="material-icons right">login</i>
-                        </button>
-                    </form>
+                    </div>
                 </div>
-
-                <p v-if="loading">Loading...</p>
-                <p v-if="peerError" style="color: red">{{ peerError }}</p>
-                <p>Crafted with &#10084; <em>by <a href="https://r.milon.pro" target="_blank" rel="noopener noreferrer">Rubilmax</a></em></p>
             </div>
         </div>
+        
         <div id="chat" v-if="screen === 'chat'">
-            <div class="container">
-                <h1>Multichat</h1>
-                <p>Crafted with &#10084; <em>by <a href="https://r.milon.pro" target="_blank" rel="noopener noreferrer">Rubilmax</a></em></p>
-                <p>Your username: {{ usernameInput }}</p>
+            <div class="navbar-fixed">
+                <nav class="blue">
+                    <div class="nav-wrapper">
+                        <a href="#" class="brand-logo center">Multichat</a>
+                        <ul class="right">
+                            <li>
+                                <a href="#" @click="disconnectPeer">
+                                    <i class="material-icons">power_settings_new</i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
             </div>
-
-            <div class="row">
-                <div id="users" class="col s12 m5">
-                    <div class="row">
-                        <!-- We don't show connection form if the client is disconnected -->
-                        <div v-if="!peer.disconnected">
-                            <form v-on:submit="submitConnection">
-                                <div class="input-field col s8">
-                                    <input :disabled="loading" id="target_id" type="text" v-model="targetIdInput" />
-                                    <label for="target_id">Target username</label>
+            
+            <div class="container">
+                <div class="row">
+                    <!-- User list column -->
+                    <div class="col s12 m4">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">Users</span>
+                                
+                                <div class="user-item active">
+                                    <img :src="getProfilePic(usernameInput)" class="user-avatar">
+                                    <span>{{ usernameInput }} (You)</span>
+                                    <span class="status-indicator status-online"></span>
                                 </div>
-                                <button v-bind:class="{ disabled: loading }" class="btn-large waves-effect waves-light col s4" type="submit">
-                                    Connect<i class="material-icons right">login</i>
-                                </button>
-                            </form>
-
-                            <button class="btn-large waves-effect waves-light red col s12" v-on:click="disconnectPeer">
-                                Disconnect from server<i class="material-icons right">logout</i>
-                            </button>
-
-                            <div class="col s12">
-                                <em v-if="peerError" style="color: red">{{ peerError }}</em>
+                                
+                                <div v-for="peerId in peerIds" class="user-item" @click="setActiveChat(peerId)" :class="{ active: activeChat === peerId }">
+                                    <img :src="getProfilePic(getUsername(peerId))" class="user-avatar">
+                                    <span>{{ getUsername(peerId) }}</span>
+                                    <span class="status-indicator" :class="isUserOnline(peerId) ? 'status-online' : 'status-offline'"></span>
+                                </div>
+                                
+                                <div v-if="peerIds.length === 0" class="center grey-text">
+                                    No other users connected
+                                </div>
+                            </div>
+                            
+                            <div class="card-action">
+                                <form @submit.prevent="submitConnection">
+                                    <div class="input-field">
+                                        <input id="target_id" type="text" v-model="targetIdInput" :disabled="peer.disconnected" />
+                                        <label for="target_id">Connect to username</label>
+                                    </div>
+                                    <button class="btn waves-effect waves-light blue" type="submit" :disabled="peer.disconnected">
+                                        Connect <i class="material-icons right">person_add</i>
+                                    </button>
+                                </form>
+                                
+                                <p v-if="peerError" class="red-text center">{{ peerError }}</p>
+                                
+                                <div v-if="peer.disconnected" class="red lighten-4 red-text text-darken-4 padding-10">
+                                    <i class="material-icons left">warning</i>
+                                    You are disconnected! Can't connect to new users.
+                                </div>
                             </div>
                         </div>
-                        <div v-else class="container">
-                            <h5>You are disconnected!</h5>
-                            <em>You can still talk to connected users, but won't be able to reach or be reached by any new user!</em>
-                        </div>
-
-                        <div class="col s12">
-                            <h4>Connected users</h4>
-                            <p><i class="material-icons">portrait</i>{{ usernameInput }}</p>
-                            <p v-for="peerId in peerIds">
-                                <i class="material-icons">portrait</i>{{ getUsername(peerId) }}
-                            </p>
+                    </div>
+                    
+                    <!-- Chat column -->
+                    <div class="col s12 m8">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title" v-if="activeChat">
+                                    Chat with {{ getUsername(activeChat) }}
+                                    <span v-if="typingUsers[activeChat]" class="grey-text" style="font-size: 0.8em">
+                                        (typing...)
+                                    </span>
+                                </span>
+                                <span class="card-title" v-else>Select a user to chat</span>
+                                
+                                <div id="chatbox" v-if="activeChat">
+                                    <div v-for="message in filteredMessages" :key="message.timestamp">
+                                        <div class="message-info">
+                                            <img :src="getProfilePic(message.sender)" class="user-avatar" style="width: 25px; height: 25px;">
+                                            {{ message.sender }} • {{ formatTime(message.timestamp) }}
+                                        </div>
+                                        <div :class="['message', message.sender === usernameInput ? 'sent' : 'received']">
+                                            <div v-if="message.type === 'text'">
+                                                {{ message.content }}
+                                            </div>
+                                            <div v-else-if="message.type === 'file'">
+                                                <div class="file-message">
+                                                    <i class="material-icons file-icon">insert_drive_file</i>
+                                                    <div>
+                                                        <div>{{ message.fileName }}</div>
+                                                        <div style="font-size: 0.8em;">{{ formatFileSize(message.fileSize) }}</div>
+                                                        <a href="#" @click.prevent="downloadFile(message)">Download</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-else-if="message.type === 'image'">
+                                                <img :src="message.content" class="media-preview" @click="showFullscreen(message.content)">
+                                            </div>
+                                            <div v-else-if="message.type === 'video'">
+                                                <video controls class="media-preview">
+                                                    <source :src="message.content">
+                                                </video>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div v-else class="center grey-text" style="height: 300px; display: flex; align-items: center; justify-content: center;">
+                                    Select a user from the list to start chatting
+                                </div>
+                                
+                                <div class="typing-indicator">
+                                    {{ typingStatus }}
+                                </div>
+                                
+                                <div class="chat-input-container" v-if="activeChat">
+                                    <div class="file-field input-field chat-input">
+                                        <div class="btn blue action-button">
+                                            <i class="material-icons">attach_file</i>
+                                            <input type="file" id="file-upload" @change="handleFileUpload" :disabled="uploading">
+                                        </div>
+                                    </div>
+                                    
+                                    <input type="text" v-model="chatMessageInput" 
+                                           @keyup.enter="submitChat" 
+                                           @keyup="handleTyping"
+                                           class="chat-input" 
+                                           placeholder="Type your message...">
+                                    
+                                    <button class="btn waves-effect waves-light blue action-button" @click="submitChat">
+                                        <i class="material-icons">send</i>
+                                    </button>
+                                </div>
+                                
+                                <div class="progress-container" id="upload-progress">
+                                    <div class="progress">
+                                        <div class="determinate" :style="{width: uploadProgress + '%'}"></div>
+                                    </div>
+                                    <div class="center">{{ uploadProgress }}%</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="col s12 m7">
-                    <h4>Chatbox</h4>
-                    <div id="chatbox">
-                        <p v-for="chat in chats">{{ chat.sender }}: {{ chat.message }}</p>
-                    </div>
-                    <div class="row">
-                        <form v-on:submit="submitChat">
-                            <div class="input-field col s10">
-                                <input id="chat_message" type="text" v-model="chatMessageInput" />
-                                <label for="chat_message">Your message</label>
-                            </div>
-                            <button class="btn-floating btn-large waves-effect waves-light red" type="submit">
-                                <i class="material-icons">send</i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
+            </div>
+            
+            <div class="media-fullscreen" v-if="fullscreenMedia" @click="fullscreenMedia = null">
+                <span class="close-fullscreen">&times;</span>
+                <img v-if="fullscreenMediaType === 'image'" :src="fullscreenMedia">
+                <video v-else controls autoplay>
+                    <source :src="fullscreenMedia">
+                </video>
             </div>
         </div>
     </div>
@@ -138,177 +392,634 @@
 
 <script>
     const appPrefix = "secure-p2p-multichat-";
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-    const oldChats = localStorage.getItem("chats");
-    const chats = oldChats ? JSON.parse(oldChats) : [];
+    // Load data from localStorage
+    const loadFromStorage = (key, defaultValue) => {
+        const item = localStorage.getItem(appPrefix + key);
+        return item ? JSON.parse(item) : defaultValue;
+    };
+
+    // Save data to localStorage
+    const saveToStorage = (key, value) => {
+        localStorage.setItem(appPrefix + key, JSON.stringify(value));
+    };
 
     const app = new Vue({
         el: "#app",
         data: {
             screen: "login",
-            usernameInput: localStorage.getItem("username"),
+            usernameInput: "",
+            profilePicPreview: loadFromStorage("profilePic", null),
             peerError: "",
             loading: false,
             peer: {},
             targetIdInput: "",
             peerIds: [],
             connections: {},
-            chats,
-            chatMessageInput: ""
+            messages: loadFromStorage("messages", []),
+            activeChat: null,
+            chatMessageInput: "",
+            typingUsers: {},
+            lastTypingTime: 0,
+            typingTimeout: null,
+            uploading: false,
+            uploadProgress: 0,
+            fullscreenMedia: null,
+            fullscreenMediaType: null,
+            userStatus: {}, // Track online status of users
+            fileToUpload: null
         },
-        watch: {
-            chats: function () {
-                const chatbox = document.getElementById("chatbox");
-                if (chatbox) chatbox.scrollTop = 99999999;
+        computed: {
+            filteredMessages() {
+                if (!this.activeChat) return [];
+                return this.messages.filter(msg => 
+                    (msg.sender === this.usernameInput && msg.receiver === this.getUsername(this.activeChat)) ||
+                    (msg.sender === this.getUsername(this.activeChat) && msg.receiver === this.usernameInput)
+                    .sort((a, b) => a.timestamp - b.timestamp);
+            },
+            typingStatus() {
+                if (!this.activeChat) return "";
+                const username = this.getUsername(this.activeChat);
+                return this.typingUsers[this.activeChat] ? `${username} is typing...` : "";
             }
         },
+        watch: {
+            messages: {
+                handler() {
+                    this.scrollToBottom();
+                    saveToStorage("messages", this.messages);
+                },
+                deep: true
+            },
+            activeChat() {
+                this.scrollToBottom();
+            }
+        },
+        mounted() {
+            // Initialize from localStorage
+            this.usernameInput = loadFromStorage("username", "");
+            
+            // Initialize Materialize components
+            M.AutoInit();
+        },
         methods: {
-            getPeerId: username => appPrefix + username,
-            getUsername: peerId => peerId ? peerId.slice(appPrefix.length) : "",
-
-            addConnection: function (conn) {
+            getPeerId(username) {
+                return appPrefix + username;
+            },
+            getUsername(peerId) {
+                return peerId ? peerId.slice(appPrefix.length) : "";
+            },
+            getProfilePic(username) {
+                const pic = loadFromStorage(`profilePic-${username}`);
+                return pic || 'https://via.placeholder.com/150';
+            },
+            formatTime(timestamp) {
+                return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+            },
+            isUserOnline(peerId) {
+                return this.userStatus[peerId] || false;
+            },
+            
+            scrollToBottom() {
+                this.$nextTick(() => {
+                    const chatbox = document.getElementById("chatbox");
+                    if (chatbox) chatbox.scrollTop = chatbox.scrollHeight;
+                });
+            },
+            
+            triggerProfilePicUpload() {
+                document.getElementById('profile-pic-upload').click();
+            },
+            
+            handleProfilePicChange(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.match('image.*')) {
+                    this.peerError = "Please select an image file";
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit for profile pics
+                    this.peerError = "Profile picture must be less than 5MB";
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.profilePicPreview = event.target.result;
+                    saveToStorage("profilePic", this.profilePicPreview);
+                };
+                reader.readAsDataURL(file);
+            },
+            
+            handleFileUpload(e) {
+                this.fileToUpload = e.target.files[0];
+                if (!this.fileToUpload) return;
+                
+                if (this.fileToUpload.size > MAX_FILE_SIZE) {
+                    this.peerError = `File size exceeds 50MB limit (${this.formatFileSize(this.fileToUpload.size)})`;
+                    this.fileToUpload = null;
+                    return;
+                }
+                
+                this.sendFile(this.fileToUpload);
+                e.target.value = ''; // Reset file input
+            },
+            
+            handleTyping() {
+                if (!this.activeChat) return;
+                
+                // Notify others that we're typing
+                this.sendTyping(true);
+                
+                // Clear previous timeout
+                if (this.typingTimeout) clearTimeout(this.typingTimeout);
+                
+                // Set a timeout to stop typing indication after 2 seconds of inactivity
+                this.typingTimeout = setTimeout(() => {
+                    this.sendTyping(false);
+                }, 2000);
+            },
+            
+            sendTyping(isTyping) {
+                if (!this.activeChat || !this.connections[this.activeChat]) return;
+                
+                this.connections[this.activeChat].send({
+                    type: "typing",
+                    isTyping,
+                    sender: this.usernameInput
+                });
+            },
+            
+            addConnection(conn) {
                 this.connections[conn.peer] = conn;
+                this.userStatus[conn.peer] = true; // Mark as online
                 this.updatePeerIds();
-
+                
+                // If we don't have an active chat, set it to this new connection
+                if (!this.activeChat) {
+                    this.activeChat = conn.peer;
+                }
+                
                 console.log(`Connected to ${conn.peer}!`);
             },
-            removeConnection: function (conn) {
-                delete this.connections[conn.peer];
-                this.updatePeerIds();
+            
+            removeConnection(conn) {
+                if (this.connections[conn.peer]) {
+                    this.userStatus[conn.peer] = false; // Mark as offline
+                    delete this.connections[conn.peer];
+                    this.updatePeerIds();
+                    
+                    // If the active chat was this connection, clear it
+                    if (this.activeChat === conn.peer) {
+                        this.activeChat = null;
+                    }
+                }
             },
-            updatePeerIds: function () {
+            
+            updatePeerIds() {
                 this.peerIds = Object.keys(this.connections);
             },
-            disconnectPeer: function () {
-                this.peer.disconnect();
+            
+            disconnectPeer() {
+                if (this.peer.disconnected) {
+                    // If already disconnected, try to reconnect
+                    this.createPeer();
+                } else {
+                    this.peer.disconnect();
+                    // Update status for all connected users
+                    this.peerIds.forEach(peerId => {
+                        this.userStatus[peerId] = false;
+                    });
+                }
             },
-
-            configureConnection: function (conn) {
+            
+            configureConnection(conn) {
                 conn.on("data", data => {
                     if (data.type === "connections") {
+                        // Update our list of connections
                         data.peerIds.forEach(peerId => {
-                            if (!this.connections[peerId]) {
+                            if (!this.connections[peerId] && peerId !== this.peer.id) {
                                 this.initiateConnection(peerId);
                             }
                         });
-                    } else if (data.type === "chat") {
-                        this.receiveChat(data.chat);
+                    } 
+                    else if (data.type === "chat") {
+                        this.receiveMessage(data.message);
+                    } 
+                    else if (data.type === "file") {
+                        this.receiveFile(data);
+                    } 
+                    else if (data.type === "typing") {
+                        this.$set(this.typingUsers, conn.peer, data.isTyping);
+                    } 
+                    else if (data.type === "profilePic") {
+                        saveToStorage(`profilePic-${data.username}`, data.picData);
+                        this.$forceUpdate(); // Refresh UI to show new profile pic
                     }
                 });
+                
                 conn.on("close", () => this.removeConnection(conn));
-                conn.on("error", () => this.removeConnection(conn));
-
-                conn.metadata.peerIds.forEach(peerId => {
-                    if (!this.connections[peerId]) {
-                        this.initiateConnection(peerId);
-                    }
+                conn.on("error", (err) => {
+                    console.error("Connection error:", err);
+                    this.removeConnection(conn);
                 });
-            },
-
-            initiateConnection: function (peerId) {
-                if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
-                    this.loading = true;
-                    this.peerError = "";
-
-                    console.log(`Connecting to ${peerId}...`);
-
-                    const options = {
-                        metadata: {
-                            peerIds: this.peerIds
-                        },
-                        serialization: "json"
-                    };
-                    const conn = this.peer.connect(peerId, options);
-                    this.configureConnection(conn);
-
-                    conn.on("open", () => {
-                        this.addConnection(conn);
-                        if (this.getUsername(conn.peer) === this.targetIdInput) {
-                            this.targetIdInput = "";
-                            this.loading = false;
+                
+                if (conn.metadata && conn.metadata.peerIds) {
+                    conn.metadata.peerIds.forEach(peerId => {
+                        if (!this.connections[peerId] && peerId !== this.peer.id) {
+                            this.initiateConnection(peerId);
                         }
                     });
                 }
             },
-
-            createPeer: function () {
-                this.peer = new Peer(this.getPeerId(this.usernameInput));
-
+            
+            initiateConnection(peerId) {
+                if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
+                    this.loading = true;
+                    this.peerError = "";
+                    
+                    console.log(`Connecting to ${peerId}...`);
+                    
+                    const options = {
+                        metadata: {
+                            peerIds: this.peerIds,
+                            username: this.usernameInput,
+                            profilePic: this.profilePicPreview
+                        },
+                        serialization: "json",
+                        reliable: true // Enable reliable data transfer for large files
+                    };
+                    
+                    const conn = this.peer.connect(peerId, options);
+                    this.configureConnection(conn);
+                    
+                    conn.on("open", () => {
+                        this.addConnection(conn);
+                        this.loading = false;
+                        
+                        // Share our profile picture with the new connection
+                        if (this.profilePicPreview) {
+                            conn.send({
+                                type: "profilePic",
+                                username: this.usernameInput,
+                                picData: this.profilePicPreview
+                            });
+                        }
+                        
+                        // If we initiated this connection with a target ID, clear it
+                        if (this.getUsername(peerId) === this.targetIdInput) {
+                            this.targetIdInput = "";
+                        }
+                        
+                        // Set this as active chat if none is selected
+                        if (!this.activeChat) {
+                            this.activeChat = peerId;
+                        }
+                    });
+                    
+                    conn.on("error", (err) => {
+                        console.error("Connection error:", err);
+                        this.loading = false;
+                        this.peerError = `Failed to connect to ${this.getUsername(peerId)}`;
+                    });
+                }
+            },
+            
+            createPeer() {
+                this.loading = true;
+                this.peerError = "";
+                
+                // Destroy previous peer if it exists
+                if (this.peer && this.peer.destroy) {
+                    this.peer.destroy();
+                }
+                
+                this.peer = new Peer(this.getPeerId(this.usernameInput), {
+                    debug: 2 // Enable logging for debugging
+                });
+                
                 this.peer.on("open", () => {
                     this.screen = "chat";
                     this.loading = false;
                     this.peerError = "";
-                });
-
-                this.peer.on("error", error => {
-                    if (error.type === "peer-unavailable") {
-                        this.loading = false;
-                        this.peerError = `${this.targetIdInput} is unreachable!`;
-                        this.targetIdInput = "";
-                    } else if (error.type === "unavailable-id") {
-                        this.loading = false;
-                        this.peerError = `${this.usernameInput} is already taken!`;
-                    } else this.peerError = error;
-                });
-
-                this.peer.on('connection', conn => {
-                    if (!this.peerIds.includes(conn.peer)) {
-                        this.configureConnection(conn);
-
-                        conn.on("open", () => {
-                            this.addConnection(conn);
-
+                    
+                    // Share our profile picture with existing connections
+                    if (this.profilePicPreview) {
+                        Object.values(this.connections).forEach(conn => {
                             conn.send({
-                                type: "connections",
-                                peerIds: this.peerIds
+                                type: "profilePic",
+                                username: this.usernameInput,
+                                picData: this.profilePicPreview
                             });
                         });
                     }
                 });
+                
+                this.peer.on("error", error => {
+                    console.error("Peer error:", error);
+                    
+                    if (error.type === "peer-unavailable") {
+                        this.loading = false;
+                        this.peerError = `${this.targetIdInput} is unreachable!`;
+                        this.targetIdInput = "";
+                    } 
+                    else if (error.type === "unavailable-id") {
+                        this.loading = false;
+                        this.peerError = `${this.usernameInput} is already taken!`;
+                    } 
+                    else if (error.type === "network") {
+                        this.peerError = "Network error. Please check your connection.";
+                    }
+                    else {
+                        this.peerError = error.message || "An error occurred";
+                    }
+                    
+                    // Try to reconnect after error
+                    setTimeout(() => {
+                        if (this.screen === "chat" && this.peer.disconnected) {
+                            this.createPeer();
+                        }
+                    }, 3000);
+                });
+                
+                this.peer.on("disconnected", () => {
+                    console.log("Peer disconnected");
+                    // Try to reconnect
+                    setTimeout(() => {
+                        if (this.screen === "chat") {
+                            this.createPeer();
+                        }
+                    }, 3000);
+                });
+                
+                this.peer.on("close", () => {
+                    console.log("Peer connection closed");
+                });
+                
+                this.peer.on('connection', conn => {
+                    if (!this.peerIds.includes(conn.peer)) {
+                        this.configureConnection(conn);
+                        
+                        conn.on("open", () => {
+                            this.addConnection(conn);
+                            
+                            // Share our connections list
+                            conn.send({
+                                type: "connections",
+                                peerIds: this.peerIds
+                            });
+                            
+                            // Share our profile picture
+                            if (this.profilePicPreview) {
+                                conn.send({
+                                    type: "profilePic",
+                                    username: this.usernameInput,
+                                    picData: this.profilePicPreview
+                                });
+                            }
+                        });
+                    }
+                });
             },
-
-            submitLogin: function (event) {
+            
+            submitLogin(event) {
                 if (event) event.preventDefault();
-
+                
                 if (this.usernameInput.length > 0 && !this.loading) {
                     this.loading = true;
                     this.peerError = "";
-
-                    localStorage.setItem("username", this.usernameInput);
-
+                    
+                    saveToStorage("username", this.usernameInput);
+                    
+                    // Save profile pic if it's new
+                    if (this.profilePicPreview) {
+                        saveToStorage(`profilePic-${this.usernameInput}`, this.profilePicPreview);
+                    }
+                    
                     this.createPeer();
                 }
             },
-            submitConnection: function (event) {
+            
+            submitConnection(event) {
                 event.preventDefault();
-
+                
+                if (!this.targetIdInput || this.targetIdInput === this.usernameInput) {
+                    this.peerError = "Invalid username";
+                    return;
+                }
+                
                 const peerId = this.getPeerId(this.targetIdInput);
                 this.initiateConnection(peerId);
             },
-            receiveChat: function (chat) {
-                this.chats.push(chat);
-                localStorage.setItem("chats", JSON.stringify(this.chats));
+            
+            setActiveChat(peerId) {
+                this.activeChat = peerId;
+                // Clear typing indicator when switching chats
+                this.$set(this.typingUsers, peerId, false);
             },
-            submitChat: function (event) {
-                event.preventDefault();
-
-                if (this.chatMessageInput.length > 0) {
-                    const chat = {
+            
+            receiveMessage(message) {
+                // Check if message already exists
+                const exists = this.messages.some(
+                    msg => msg.timestamp === message.timestamp && msg.sender === message.sender
+                );
+                
+                if (!exists) {
+                    this.messages.push(message);
+                }
+            },
+            
+            submitChat(event) {
+                if (event) event.preventDefault();
+                
+                if (this.chatMessageInput.length > 0 && this.activeChat) {
+                    const message = {
+                        type: "text",
                         sender: this.usernameInput,
-                        message: this.chatMessageInput,
+                        receiver: this.getUsername(this.activeChat),
+                        content: this.chatMessageInput,
                         timestamp: new Date().getTime()
                     };
-
-                    this.receiveChat(chat);
-                    Object.values(this.connections).forEach(conn => {
-                        conn.send({
+                    
+                    this.receiveMessage(message);
+                    
+                    // Send to the active chat
+                    if (this.connections[this.activeChat]) {
+                        this.connections[this.activeChat].send({
                             type: "chat",
-                            chat
+                            message
                         });
-                    });
-
+                    }
+                    
                     this.chatMessageInput = "";
+                    this.sendTyping(false);
                 }
+            },
+            
+            sendFile(file) {
+                if (!this.activeChat || !this.connections[this.activeChat]) {
+                    this.peerError = "No active connection to send file";
+                    return;
+                }
+                
+                this.uploading = true;
+                this.uploadProgress = 0;
+                document.getElementById('upload-progress').style.display = 'block';
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fileData = event.target.result;
+                    
+                    // Create a message for the file
+                    const fileMessage = {
+                        type: file.type.startsWith('image/') ? 'image' : 
+                              file.type.startsWith('video/') ? 'video' : 'file',
+                        sender: this.usernameInput,
+                        receiver: this.getUsername(this.activeChat),
+                        fileName: file.name,
+                        fileSize: file.size,
+                        content: fileData,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    // Add to our messages
+                    this.receiveMessage(fileMessage);
+                    
+                    // Split the file into chunks for reliable transfer
+                    const CHUNK_SIZE = 16 * 1024; // 16KB chunks
+                    const totalChunks = Math.ceil(fileData.length / CHUNK_SIZE);
+                    let chunksSent = 0;
+                    
+                    const sendNextChunk = () => {
+                        const start = chunksSent * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, fileData.length);
+                        const chunk = fileData.slice(start, end);
+                        
+                        this.connections[this.activeChat].send({
+                            type: "file",
+                            message: fileMessage,
+                            chunk: chunk,
+                            chunkIndex: chunksSent,
+                            totalChunks: totalChunks
+                        });
+                        
+                        chunksSent++;
+                        this.uploadProgress = Math.floor((chunksSent / totalChunks) * 100);
+                        
+                        if (chunksSent < totalChunks) {
+                            setTimeout(sendNextChunk, 0); // Small delay to prevent UI freeze
+                        } else {
+                            this.uploading = false;
+                            document.getElementById('upload-progress').style.display = 'none';
+                        }
+                    };
+                    
+                    sendNextChunk();
+                };
+                
+                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsBinaryString(file);
+                }
+            },
+            
+            receiveFile(data) {
+                // Check if we've already received this file
+                const exists = this.messages.some(
+                    msg => msg.timestamp === data.message.timestamp && msg.sender === data.message.sender
+                );
+                
+                if (!exists) {
+                    if (data.totalChunks === 1) {
+                        // Single chunk file
+                        this.receiveMessage(data.message);
+                    } else {
+                        // Multi-chunk file - need to assemble
+                        if (!this.fileChunks) this.fileChunks = {};
+                        
+                        const fileKey = `${data.message.sender}-${data.message.timestamp}`;
+                        
+                        if (!this.fileChunks[fileKey]) {
+                            this.fileChunks[fileKey] = {
+                                receivedChunks: 0,
+                                totalChunks: data.totalChunks,
+                                chunks: new Array(data.totalChunks),
+                                message: data.message
+                            };
+                        }
+                        
+                        // Store the chunk
+                        this.fileChunks[fileKey].chunks[data.chunkIndex] = data.chunk;
+                        this.fileChunks[fileKey].receivedChunks++;
+                        
+                        // Check if all chunks received
+                        if (this.fileChunks[fileKey].receivedChunks === data.totalChunks) {
+                            // Combine chunks
+                            const combinedData = this.fileChunks[fileKey].chunks.join('');
+                            const completeMessage = this.fileChunks[fileKey].message;
+                            completeMessage.content = combinedData;
+                            
+                            this.receiveMessage(completeMessage);
+                            delete this.fileChunks[fileKey];
+                        }
+                    }
+                }
+            },
+            
+            downloadFile(message) {
+                let blob;
+                
+                if (message.type === 'image' || message.type === 'video') {
+                    // Convert data URL to blob
+                    const byteString = atob(message.content.split(',')[1]);
+                    const mimeString = message.content.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    
+                    blob = new Blob([ab], { type: mimeString });
+                } else {
+                    // For binary files
+                    const byteCharacters = message.content;
+                    const byteNumbers = new Array(byteCharacters.length);
+                    
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                }
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = message.fileName || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 0);
+            },
+            
+            showFullscreen(mediaSrc) {
+                this.fullscreenMedia = mediaSrc;
+                this.fullscreenMediaType = mediaSrc.startsWith('data:image') ? 'image' : 'video';
             }
         }
     });
