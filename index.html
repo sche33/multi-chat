@@ -1,141 +1,197 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Genel + Özel Chat</title>
+  <meta charset="UTF-8">
+  <title>Chat Uygulaması</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f3f3f3; }
-    .chat-box { border: 1px solid #ccc; padding: 10px; background: white; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
-    input, button, select { padding: 8px; margin-top: 5px; }
-    #profile-pic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #aaa; }
+    * { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif; }
+    body, html { height:100%; }
+    #app { display:flex; height:100vh; }
+    /* Sol Panel */
+    #leftPanel { width:300px; background:#fafafa; border-right:1px solid #ddd; display:flex; flex-direction:column; }
+    #userInfo { display:flex; align-items:center; padding:10px; background:#f0f0f0; }
+    #myPhoto { width:50px; height:50px; border:2px solid #888; border-radius:50%; background:#ccc; cursor:pointer; object-fit:cover; }
+    #userInfo input { margin-left:10px; flex:1; padding:6px; }
+    #userInfo button { margin-left:5px; }
+    #addFriend { padding:10px; border-bottom:1px solid #ddd; }
+    #addFriend input { width:calc(100% - 80px); padding:6px; }
+    #addFriend button { width:60px; margin-left:5px; }
+    #friendsList { flex:1; overflow-y:auto; list-style:none; }
+    #friendsList li { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
+    #friendsList li:hover { background:#eef; }
+    /* Sağ Panel */
+    #chat { flex:1; display:flex; flex-direction:column; }
+    #chatHeader { padding:10px; background:#f0f0f0; border-bottom:1px solid #ddd; }
+    #messages { flex:1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; background:white; }
+    .message { margin-bottom:8px; max-width:70%; padding:8px; border-radius:10px; word-wrap:break-word; }
+    .from-me { background:#dcf8c6; align-self:flex-end; }
+    .from-them { background:#f1f0f0; align-self:flex-start; }
+    #inputArea { display:flex; padding:10px; border-top:1px solid #ddd; }
+    #messageInput { flex:1; padding:8px; }
+    #sendBtn { margin-left:5px; padding:8px 12px; }
   </style>
+  <!-- Firebase SDK'ları CDN -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
+<div id="app">
+  <!-- Sol Panel: Kullanıcı ve Arkadaş Listesi -->
+  <div id="leftPanel">
+    <div id="userInfo">
+      <img id="myPhoto" title="Profil resminizi yükleyin" alt="Profil">
+      <input type="text" id="usernameInput" placeholder="Kullanıcı adınız">
+      <button id="setNameBtn">Kaydet</button>
+    </div>
+    <div id="addFriend">
+      <input type="text" id="friendIdInput" placeholder="Arkadaş ID'si">
+      <button id="addFriendBtn">Ekle</button>
+    </div>
+    <ul id="friendsList"></ul>
+  </div>
+  <!-- Sağ Panel: Sohbet -->
+  <div id="chat">
+    <div id="chatHeader">Arkadaş: <span id="friendName">-</span></div>
+    <div id="messages"></div>
+    <div id="inputArea">
+      <input type="text" id="messageInput" placeholder="Mesaj yazın...">
+      <button id="sendBtn">Gönder</button>
+    </div>
+  </div>
+</div>
 
-  <h2>Profil</h2>
-  <input type="text" id="username" placeholder="Kullanıcı adınız" />
-  <input type="file" id="profileInput" accept="image/*" />
-  <br/>
-  <img id="profile-pic" src="" alt="Profil Fotoğrafı" />
-  
-  <h2>Genel Chat</h2>
-  <div class="chat-box" id="genelChat"></div>
-  <input type="text" id="genelMesaj" placeholder="Genel mesaj yaz..." />
-  <button onclick="gonderGenel()">Gönder</button>
+<!-- Gizli dosya seçici: Profil resmi yükleme -->
+<input type="file" id="photoInput" accept="image/*" style="display:none">
 
-  <h2>Özel Chat</h2>
-  <select id="hedefKullanici"></select>
-  <div class="chat-box" id="ozelChat"></div>
-  <input type="text" id="ozelMesaj" placeholder="Özel mesaj yaz..." />
-  <button onclick="gonderOzel()">Gönder</button>
+<script>
+  // Firebase başlatma (kendi config bilgilerinizle doldurun)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_DOMAIN",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
 
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  // Kullanıcı bilgileri (localStorage)
+  if (!localStorage.getItem('userId')) {
+    // Güvenli UUID oluşturma (HTTPS gerektirir) veya basit rastgele ID
+    const id = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2,9));
+    localStorage.setItem('userId', id);
+  }
+  const userId = localStorage.getItem('userId');
+  let username = localStorage.getItem('username') || '';
+  if (!username) {
+    username = prompt("Kullanıcı adınızı girin:");
+    if (username) localStorage.setItem('username', username);
+  }
+  document.getElementById('usernameInput').value = username;
 
-  <script>
-    // Firebase yapılandırması
-    const firebaseConfig = {
-      apiKey: "AIzaSyD30unp7ap6R6sJoU8EEKRkqlyK-dPjuqM",
-      authDomain: "genelchatprojesi.firebaseapp.com",
-      databaseURL: "https://genelchatprojesi-default-rtdb.firebaseio.com",
-      projectId: "genelchatprojesi",
-      storageBucket: "genelchatprojesi.appspot.com",
-      messagingSenderId: "751359781972",
-      appId: "1:751359781972:web:da28a4695f9571736191c1",
-      measurementId: "G-NSW2EZQ886"
+  // Profil resmi yükleme
+  const myPhoto = document.getElementById('myPhoto');
+  const photoInput = document.getElementById('photoInput');
+  // Eğer daha önce yüklenmişse göster
+  if (localStorage.getItem('profilePic')) {
+    myPhoto.src = localStorage.getItem('profilePic');
+  }
+  // Fotoğraf tıklayınca dosya seçici aç
+  myPhoto.addEventListener('click', () => photoInput.click());
+  photoInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const dataUrl = event.target.result;
+      localStorage.setItem('profilePic', dataUrl);
+      myPhoto.src = dataUrl;
     };
+    reader.readAsDataURL(file);
+  });
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  // Kullanıcı adı güncelleme
+  const setNameBtn = document.getElementById('setNameBtn');
+  setNameBtn.addEventListener('click', () => {
+    const input = document.getElementById('usernameInput');
+    if (input.value.trim()) {
+      localStorage.setItem('username', input.value.trim());
+      username = input.value.trim();
+      alert("Kullanıcı adı güncellendi.");
+    }
+  });
 
-    const usernameInput = document.getElementById("username");
-    const profileInput = document.getElementById("profileInput");
-    const profilePic = document.getElementById("profile-pic");
+  // Arkadaş listesi yönetimi
+  let friends = JSON.parse(localStorage.getItem('friends') || '[]');
+  const friendsListEl = document.getElementById('friendsList');
+  function renderFriends() {
+    friendsListEl.innerHTML = '';
+    friends.forEach(fid => {
+      const li = document.createElement('li');
+      li.textContent = fid;
+      li.addEventListener('click', () => selectFriend(fid));
+      friendsListEl.appendChild(li);
+    });
+  }
+  renderFriends();
 
-    // Profil Fotoğrafı Yükleme
-    profileInput.addEventListener("change", () => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        profilePic.src = e.target.result;
-        localStorage.setItem("profilePic", e.target.result);
+  document.getElementById('addFriendBtn').addEventListener('click', () => {
+    const friendId = document.getElementById('friendIdInput').value.trim();
+    if (!friendId) { alert("ID girin."); return; }
+    if (friendId === userId) { alert("Kendi ID'niz ile arkadaş ekleyemezsiniz."); return; }
+    if (friends.includes(friendId)) { alert("Bu ID zaten listede."); return; }
+    friends.push(friendId);
+    localStorage.setItem('friends', JSON.stringify(friends));
+    renderFriends();
+    document.getElementById('friendIdInput').value = '';
+  });
+
+  // Sohbet işlemleri
+  let currentFriend = null;
+  let chatRef = null;
+  function getChatId(id1, id2) {
+    // Karakter dizisi sıralı birleşim (örn. "a_b")
+    return [id1, id2].sort().join('_');
+  }
+  function selectFriend(friendId) {
+    currentFriend = friendId;
+    document.getElementById('friendName').textContent = friendId;
+    document.getElementById('messages').innerHTML = '';
+    // Önceki dinleyiciyi kapat
+    if (chatRef) chatRef.off();
+    // Yeni dinleyici
+    const chatId = getChatId(userId, friendId);
+    chatRef = firebase.database().ref('messages/' + chatId);
+    chatRef.on('child_added', snapshot => {
+      const msg = snapshot.val();
+      const msgDiv = document.createElement('div');
+      msgDiv.textContent = msg.text;
+      msgDiv.classList.add('message');
+      if (msg.senderId === userId) {
+        msgDiv.classList.add('from-me');
+      } else {
+        msgDiv.classList.add('from-them');
       }
-      reader.readAsDataURL(profileInput.files[0]);
+      document.getElementById('messages').appendChild(msgDiv);
+      // Scroll en alta
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
+  }
 
-    // Önceden kayıtlı profil varsa yükle
-    window.addEventListener("load", () => {
-      const pic = localStorage.getItem("profilePic");
-      if (pic) profilePic.src = pic;
+  // Mesaj gönderme
+  document.getElementById('sendBtn').addEventListener('click', () => {
+    const text = document.getElementById('messageInput').value.trim();
+    if (!text || !currentFriend) return;
+    const chatId = getChatId(userId, currentFriend);
+    firebase.database().ref('messages/' + chatId).push({
+      senderId: userId,
+      text: text
     });
-
-    // GENEL MESAJ GÖNDER
-    function gonderGenel() {
-      const ad = usernameInput.value.trim();
-      const mesaj = document.getElementById("genelMesaj").value.trim();
-      if (!ad || !mesaj) return;
-      db.ref("genel").push({ ad, mesaj });
-      document.getElementById("genelMesaj").value = "";
-    }
-
-    // GENEL MESAJLARI DİNLE
-    db.ref("genel").on("child_added", snap => {
-      const { ad, mesaj } = snap.val();
-      const box = document.getElementById("genelChat");
-      box.innerHTML += `<b>${ad}:</b> ${mesaj}<br>`;
-      box.scrollTop = box.scrollHeight;
-      if (!kullanicilar.includes(ad)) {
-        kullanicilar.push(ad);
-        guncelleKullaniciSec();
-      }
-    });
-
-    let kullanicilar = [];
-
-    function guncelleKullaniciSec() {
-      const sec = document.getElementById("hedefKullanici");
-      sec.innerHTML = "";
-      kullanicilar.forEach(ad => {
-        if (ad !== usernameInput.value) {
-          const opt = document.createElement("option");
-          opt.value = ad;
-          opt.textContent = ad;
-          sec.appendChild(opt);
-        }
-      });
-    }
-
-    // ÖZEL MESAJ GÖNDER
-    function gonderOzel() {
-      const gonderen = usernameInput.value.trim();
-      const hedef = document.getElementById("hedefKullanici").value;
-      const mesaj = document.getElementById("ozelMesaj").value.trim();
-      if (!gonderen || !hedef || !mesaj) return;
-      const key = `${gonderen}__TO__${hedef}`;
-      db.ref("ozel/" + key).push({ gonderen, mesaj });
-      document.getElementById("ozelMesaj").value = "";
-    }
-
-    // ÖZEL MESAJLARI DİNLE (2 taraflı)
-    function dinleOzel() {
-      const ad = usernameInput.value.trim();
-      if (!ad) return;
-      db.ref("ozel").on("child_added", snap => {
-        const key = snap.key;
-        if (key.includes(ad)) {
-          db.ref("ozel/" + key).on("child_added", msgSnap => {
-            const { gonderen, mesaj } = msgSnap.val();
-            const box = document.getElementById("ozelChat");
-            box.innerHTML += `<b>${gonderen}:</b> ${mesaj}<br>`;
-            box.scrollTop = box.scrollHeight;
-          });
-        }
-      });
-    }
-
-    // Kullanıcı adı girildiğinde özel sohbet dinlemeyi başlat
-    usernameInput.addEventListener("change", dinleOzel);
-  </script>
-
+    document.getElementById('messageInput').value = '';
+  });
+</script>
 </body>
 </html>
