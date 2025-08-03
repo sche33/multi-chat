@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Rol Tabanlı Chat</title>
+    <title>Premium Gerçek Zamanlı Chat</title>
 
     <!-- PeerJS for WebRTC connections -->
-    <script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <!-- Vue.js for reactive UI -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 
@@ -249,6 +249,17 @@
 
         .status-offline {
             background-color: #ccc;
+        }
+
+        .add-friend-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 5px;
         }
 
         /* Chat Area */
@@ -802,6 +813,29 @@
             cursor: pointer;
             color: #666;
         }
+
+        /* Avatar Selection */
+        .avatar-selection {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .avatar-option {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .avatar-option.selected {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 
@@ -851,6 +885,20 @@
                         >
                     </div>
 
+                    <div v-if="screen === 'register'" class="input-field">
+                        <label>Profil Resmi Seç</label>
+                        <div class="avatar-selection">
+                            <img 
+                                v-for="(avatar, index) in avatarOptions" 
+                                :key="index"
+                                :src="avatar" 
+                                class="avatar-option" 
+                                :class="{ selected: selectedAvatar === avatar }"
+                                @click="selectedAvatar = avatar"
+                            >
+                        </div>
+                    </div>
+
                     <div v-if="errorMessage" class="error-message">
                         {{ errorMessage }}
                     </div>
@@ -882,7 +930,7 @@
 
                 <div class="sidebar-content">
                     <div class="user-profile">
-                        <img :src="currentUser.avatar || 'https://i.imgur.com/8Km9tLL.png'" class="user-avatar" alt="Profile">
+                        <img :src="currentUser.avatar" class="user-avatar" alt="Profile">
                         <div class="user-info">
                             <div class="user-name">{{ currentUser.username }}</div>
                             <div class="user-rank">
@@ -947,7 +995,7 @@
                                 <div class="user-management">
                                     <div v-for="user in allUsers" class="user-card" :key="user.username">
                                         <div class="user-card-header">
-                                            <img :src="user.avatar || 'https://i.imgur.com/8Km9tLL.png'" class="user-card-avatar" alt="Profile">
+                                            <img :src="user.avatar" class="user-card-avatar" alt="Profile">
                                             <div>
                                                 <div class="user-card-name">{{ user.username }}</div>
                                                 <div class="user-card-rank">
@@ -1026,51 +1074,65 @@
                         <!-- User List -->
                         <div class="user-list">
                             <div class="user-list-header">
-                                <span>Bağlı Kullanıcılar</span>
-                                <span>{{ peerIds.length + 1 }} Aktif</span>
+                                <span>Kullanıcılar</span>
+                                <span>{{ allUsers.length }} Toplam</span>
                             </div>
 
-                            <div class="user-item" @click="selectUser(currentUser)">
-                                <img :src="currentUser.avatar || 'https://i.imgur.com/8Km9tLL.png'" class="user-item-avatar" alt="Profile">
+                            <div class="user-list-header">
+                                <span>Arkadaşlarım</span>
+                                <span>{{ friends.length }} Aktif</span>
+                            </div>
+
+                            <div v-for="friend in friends" class="user-item" :key="friend.username" @click="selectUser(friend)">
+                                <img :src="friend.avatar" class="user-item-avatar" alt="Profile">
                                 <div class="user-item-info">
                                     <div class="user-item-name">
-                                        {{ currentUser.username }}
-                                        <span class="user-status status-online"></span>
+                                        {{ friend.username }}
+                                        <span class="user-status" :class="isUserOnline(friend.username) ? 'status-online' : 'status-offline'"></span>
                                     </div>
                                     <div class="user-item-rank">
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(currentUser.role).color }">
-                                            {{ getRole(currentUser.role).name }}
+                                        <span class="rank-badge" :style="{ backgroundColor: getRole(friend.role).color }">
+                                            {{ getRole(friend.role).name }}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div v-for="peerId in peerIds" class="user-item" :key="peerId" @click="selectUser(getUserFromPeerId(peerId))">
-                                <img :src="getUserFromPeerId(peerId).avatar || 'https://i.imgur.com/8Km9tLL.png'" class="user-item-avatar" alt="Profile">
+                            <div class="user-list-header">
+                                <span>Diğer Kullanıcılar</span>
+                            </div>
+
+                            <div v-for="user in nonFriendUsers" class="user-item" :key="user.username">
+                                <img :src="user.avatar" class="user-item-avatar" alt="Profile">
                                 <div class="user-item-info">
                                     <div class="user-item-name">
-                                        {{ getUsername(peerId) }}
-                                        <span class="user-status status-online"></span>
+                                        {{ user.username }}
+                                        <span class="user-status" :class="isUserOnline(user.username) ? 'status-online' : 'status-offline'"></span>
                                     </div>
                                     <div class="user-item-rank">
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(getUserRole(peerId)).color }">
-                                            {{ getRoleName(getUserRole(peerId)) }}
+                                        <span class="rank-badge" :style="{ backgroundColor: getRole(user.role).color }">
+                                            {{ getRole(user.role).name }}
                                         </span>
                                     </div>
                                 </div>
+                                <button class="add-friend-btn" @click="addFriend(user)">
+                                    <i class="material-icons" style="font-size: 14px; vertical-align: middle;">person_add</i>
+                                    Ekle
+                                </button>
                             </div>
                         </div>
 
                         <!-- Chat Area -->
                         <div class="chat-area">
                             <div class="chat-header" v-if="selectedChatUser">
-                                <img :src="selectedChatUser.avatar || 'https://i.imgur.com/8Km9tLL.png'" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                                <img :src="selectedChatUser.avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
                                 <div>
                                     <div style="font-weight: 500;">{{ selectedChatUser.username }}</div>
                                     <div style="font-size: 0.8rem; color: #666;">
                                         <span class="rank-badge" :style="{ backgroundColor: getRole(selectedChatUser.role).color }">
                                             {{ getRole(selectedChatUser.role).name }}
                                         </span>
+                                        <span class="user-status" :class="isUserOnline(selectedChatUser.username) ? 'status-online' : 'status-offline'" style="margin-left: 5px;"></span>
                                     </div>
                                 </div>
                             </div>
@@ -1130,7 +1192,7 @@
                             <div v-if="!selectedChatUser" class="text-center" style="padding: 50px; color: #999;">
                                 <i class="material-icons" style="font-size: 50px; margin-bottom: 20px;">forum</i>
                                 <h3>Sohbet Başlatın</h3>
-                                <p>Bağlı kullanıcılardan birini seçerek sohbet başlatabilirsiniz</p>
+                                <p>Arkadaşlarınızdan birini seçerek sohbet başlatabilirsiniz</p>
                             </div>
                         </div>
                     </div>
@@ -1176,6 +1238,23 @@
         const appPrefix = "premium-chat-";
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
         const ADMIN_PASSWORD = "QSjL4wsz3ZexMvw2pyheHethZFmKyr7JAFVH8WN5wHW4Gvc8";
+        const PEERJS_CONFIG = {
+            host: 'peerjs-server-1.herokuapp.com',
+            secure: true,
+            port: 443
+        };
+
+        // Default avatar options
+        const defaultAvatars = [
+            'https://i.imgur.com/JzT9Z7n.png',
+            'https://i.imgur.com/4Q7XZ9L.png',
+            'https://i.imgur.com/8XZ9L4Q.png',
+            'https://i.imgur.com/Z9L4Q8X.png',
+            'https://i.imgur.com/L4Q8XZ9.png',
+            'https://i.imgur.com/Q8XZ9L4.png',
+            'https://i.imgur.com/XZ9L4Q8.png',
+            'https://i.imgur.com/9L4Q8XZ.png'
+        ];
 
         // Default rank icons
         const defaultRankIcons = [
@@ -1207,10 +1286,13 @@
                 errorMessage: "",
                 loading: false,
                 showPassword: false,
+                avatarOptions: defaultAvatars,
+                selectedAvatar: defaultAvatars[0],
                 
                 // Main App
                 currentUser: null,
                 allUsers: [],
+                friends: [],
                 sidebarOpen: false,
                 activeAdminTab: null,
                 
@@ -1245,6 +1327,12 @@
                 restrictionMessage: ""
             },
             computed: {
+                nonFriendUsers() {
+                    return this.allUsers.filter(user => 
+                        user.username !== this.currentUser.username && 
+                        !this.friends.some(f => f.username === user.username)
+                    );
+                },
                 filteredMessages() {
                     if (!this.selectedChatUser) return [];
                     
@@ -1302,13 +1390,32 @@
                             banned: false,
                             timeout: null,
                             sessionId: null,
-                            messageCount: 0
+                            messageCount: 0,
+                            friends: []
                         });
                         this.saveUsers();
+                    }
+                    
+                    // Load friends for current user
+                    if (this.currentUser) {
+                        this.loadFriends();
                     }
                 },
                 saveUsers() {
                     localStorage.setItem("users", JSON.stringify(this.allUsers));
+                },
+                loadFriends() {
+                    if (!this.currentUser) return;
+                    
+                    this.friends = this.allUsers
+                        .filter(user => 
+                            user.username !== this.currentUser.username && 
+                            this.currentUser.friends.includes(user.username)
+                        )
+                        .map(friend => ({
+                            ...friend,
+                            online: this.isUserOnline(friend.username)
+                        }));
                 },
                 submitRegister() {
                     if (this.registerPassword !== this.registerPasswordConfirm) {
@@ -1335,12 +1442,13 @@
                     const newUser = {
                         username: this.registerUsername,
                         password: this.registerPassword,
-                        avatar: `https://i.pravatar.cc/150?u=${this.registerUsername}`,
+                        avatar: this.selectedAvatar,
                         role: 0, // Yeni Üye
                         banned: false,
                         timeout: null,
                         sessionId: this.generateSessionId(),
-                        messageCount: 0
+                        messageCount: 0,
+                        friends: []
                     };
                     
                     this.allUsers.push(newUser);
@@ -1433,6 +1541,7 @@
                     this.screen = "chat";
                     this.loading = false;
                     this.chats = [];
+                    this.loadFriends();
                     this.createPeer();
                 },
                 getPeerId(username) {
@@ -1472,13 +1581,9 @@
                     const user = this.allUsers.find(u => u.username === username);
                     return user ? user.role : 0;
                 },
-                getUserFromPeerId(peerId) {
-                    const username = this.getUsername(peerId);
-                    return this.allUsers.find(u => u.username === username) || {
-                        username: username,
-                        role: 0,
-                        avatar: 'https://i.imgur.com/8Km9tLL.png'
-                    };
+                isUserOnline(username) {
+                    return this.peerIds.includes(this.getPeerId(username)) || 
+                           (this.currentUser && this.currentUser.username === username);
                 },
                 formatFileSize(bytes) {
                     if (bytes === 0) return '0 Bytes';
@@ -1500,15 +1605,39 @@
                     return prevMessage.sender !== message.sender;
                 },
                 
+                // Friend Methods
+                addFriend(user) {
+                    if (!this.currentUser.friends.includes(user.username)) {
+                        this.currentUser.friends.push(user.username);
+                        this.updateUser(this.currentUser);
+                        this.loadFriends();
+                        
+                        // Send friend request to the other user if online
+                        const peerId = this.getPeerId(user.username);
+                        if (this.connections[peerId]) {
+                            this.connections[peerId].send({
+                                type: "friendRequest",
+                                from: this.currentUser.username
+                            });
+                        }
+                    }
+                },
+                
                 // PeerJS Methods
                 addConnection(conn) {
                     this.connections[conn.peer] = conn;
                     this.updatePeerIds();
                     console.log(`Connected to ${conn.peer}!`);
+                    
+                    // Update friends list when a new connection is established
+                    this.loadFriends();
                 },
                 removeConnection(conn) {
                     delete this.connections[conn.peer];
                     this.updatePeerIds();
+                    
+                    // Update friends list when a connection is lost
+                    this.loadFriends();
                 },
                 updatePeerIds() {
                     this.peerIds = Object.keys(this.connections);
@@ -1533,7 +1662,20 @@
                             if (existingUser) {
                                 Object.assign(existingUser, user);
                                 this.saveUsers();
+                                this.loadFriends();
                             }
+                        } else if (data.type === "friendRequest") {
+                            if (confirm(`${data.from} sizi arkadaş olarak eklemek istiyor. Kabul ediyor musunuz?`)) {
+                                if (!this.currentUser.friends.includes(data.from)) {
+                                    this.currentUser.friends.push(data.from);
+                                    this.updateUser(this.currentUser);
+                                    this.loadFriends();
+                                }
+                            }
+                        } else if (data.type === "rankUpdate") {
+                            // Update rank icon
+                            this.roles[data.roleIndex].icon = data.icon;
+                            this.saveRoles();
                         }
                     });
                     conn.on("close", () => this.removeConnection(conn));
@@ -1566,14 +1708,30 @@
                         conn.on("open", () => {
                             this.addConnection(conn);
                             this.loading = false;
+                            
+                            // Send user data to the new connection
+                            conn.send({
+                                type: "userUpdate",
+                                user: this.currentUser
+                            });
+
+                            conn.send({
+                                type: "connections",
+                                peerIds: this.peerIds
+                            });
                         });
                     }
                 },
                 createPeer() {
-                    this.peer = new Peer(this.getPeerId(this.currentUser.username));
+                    this.peer = new Peer(this.getPeerId(this.currentUser.username), PEERJS_CONFIG);
 
                     this.peer.on("open", () => {
                         this.loading = false;
+                        
+                        // Connect to friends automatically
+                        this.currentUser.friends.forEach(friend => {
+                            this.initiateConnection(this.getPeerId(friend));
+                        });
                     });
 
                     this.peer.on("error", error => {
