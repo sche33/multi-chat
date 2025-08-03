@@ -2,277 +2,113 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Genel & Özel Multichat</title>
-  <script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  <script async src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <title>Genel ve Özel Chat</title>
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <style>
-    body {
-      font-family: "Red Hat Display", sans-serif;
-      background-color: #ecf0f1;
-    }
-    #chatbox {
-      height: 25rem;
-      overflow-y: auto;
-      padding: 1em;
-      background: white;
-      border-radius: 8px;
-    }
-    .chat-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-right: 0.5em;
-    }
-    .file-preview img, .file-preview video {
-      max-width: 200px;
-      border-radius: 6px;
-      margin-top: 5px;
-    }
-    .tabs .tab a {
-      color: #444;
-    }
-    .tabs .tab a.active {
-      background-color: #e53935;
-      color: white;
-    }
+    body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; }
+    input, button, textarea, select { padding: 8px; border: none; border-radius: 4px; margin: 5px; }
+    textarea { width: 100%; height: 100px; }
+    #chat { border: 1px solid #444; padding: 10px; height: 300px; overflow-y: scroll; background: #1e1e1e; }
+    #controls { margin-top: 10px; }
+    .message { margin: 5px 0; }
+    .you { color: lightgreen; }
+    .other { color: skyblue; }
   </style>
 </head>
 <body>
-<div id="app">
-  <div v-if="screen === 'login'" class="container center-align">
-    <h4>Kullanıcı Adı Gir</h4>
-    <form @submit="submitLogin">
-      <div class="file-field input-field">
-        <div class="btn grey darken-2">
-          <span>Avatar</span>
-          <input type="file" accept="image/*" @change="onAvatarChange" />
-        </div>
-        <div class="file-path-wrapper">
-          <input class="file-path validate" type="text" placeholder="Profil resmi seç">
-        </div>
-      </div>
-      <img v-if="avatar" :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
-      <div class="input-field">
-        <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
-        <label for="username">Kullanıcı adı</label>
-      </div>
-      <button class="btn-large red" type="submit" :disabled="loading">
-        Giriş Yap <i class="material-icons right">login</i>
-      </button>
-      <p v-if="peerError" style="color:red">{{ peerError }}</p>
-    </form>
-  </div>
 
-  <div v-if="screen === 'chat'" class="container">
-    <div class="row">
-      <div class="col s12 m4">
-        <h5>Hoş geldin, {{ usernameInput }}</h5>
-        <img :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
-        <form @submit="submitConnection" class="row">
-          <div class="input-field col s8">
-            <input id="target_id" type="text" v-model="targetIdInput" />
-            <label for="target_id">Kişiye Bağlan</label>
-          </div>
-          <button class="btn col s4">Bağlan</button>
-        </form>
-        <button class="btn red" @click="disconnectPeer">Bağlantıyı Kes</button>
-        <h6>Bağlı Kullanıcılar</h6>
-        <p><i class="material-icons">person</i> {{ usernameInput }}</p>
-        <p v-for="peerId in peerIds">
-          <i class="material-icons">person</i> {{ getUsername(peerId) }}
-        </p>
-      </div>
+<h2>Genel ve Özel Chat</h2>
 
-      <div class="col s12 m8">
-        <ul class="tabs">
-          <li class="tab col s6"><a href="#" @click.prevent="currentTab='general'" :class="{active: currentTab==='general'}">Genel Chat</a></li>
-          <li class="tab col s6"><a href="#" @click.prevent="currentTab='private'" :class="{active: currentTab==='private'}">Özel Chat</a></li>
-        </ul>
+<label>Kullanıcı Adı:</label>
+<input type="text" id="username" placeholder="örnek: user123" />
 
-        <div id="chatbox">
-          <div v-if="currentTab === 'general'">
-            <div v-for="chat in generalChats">
-              <p>
-                <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
-                <strong>{{ chat.sender }}:</strong> {{ chat.message }}
-              </p>
-              <div class="file-preview" v-if="chat.file">
-                <img v-if="chat.file.type.startsWith('image')" :src="chat.file.url" />
-                <video v-else-if="chat.file.type.startsWith('video')" controls :src="chat.file.url"></video>
-                <a v-else :href="chat.file.url" target="_blank">{{ chat.file.name }}</a>
-              </div>
-            </div>
-          </div>
-          <div v-else>
-            <div v-for="chat in chats">
-              <p>
-                <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
-                <strong>{{ chat.sender }}:</strong> {{ chat.message }}
-              </p>
-              <div class="file-preview" v-if="chat.file">
-                <img v-if="chat.file.type.startsWith('image')" :src="chat.file.url" />
-                <video v-else-if="chat.file.type.startsWith('video')" controls :src="chat.file.url"></video>
-                <a v-else :href="chat.file.url" target="_blank">{{ chat.file.name }}</a>
-              </div>
-            </div>
-          </div>
-        </div>
+<label>Mod:</label>
+<select id="mode">
+  <option value="genel">Genel Chat</option>
+  <option value="özel">Özel Chat</option>
+</select>
 
-        <form @submit="submitChat" class="row">
-          <div class="input-field col s7">
-            <input id="chat_message" type="text" v-model="chatMessageInput" />
-            <label for="chat_message">Mesaj</label>
-          </div>
-          <div class="file-field input-field col s4">
-            <div class="btn grey">
-              <span>Dosya</span>
-              <input type="file" @change="onFileChange" />
-            </div>
-            <div class="file-path-wrapper">
-              <input class="file-path validate" type="text" placeholder="Dosya seç">
-            </div>
-          </div>
-          <button class="btn-floating btn-large red col s1" type="submit">
-            <i class="material-icons">send</i>
-          </button>
-        </form>
-      </div>
-    </div>
+<div id="privateUserField" style="display: none;">
+  <label>Özel Alıcı Kullanıcı Adı:</label>
+  <input type="text" id="receiver" placeholder="örnek: user456" />
+</div>
+
+<button id="connectBtn">Bağlan</button>
+
+<div id="chatArea" style="display:none;">
+  <h3 id="roomTitle">Chat</h3>
+  <div id="chat"></div>
+
+  <div id="controls">
+    <textarea id="messageInput" maxlength="500" placeholder="Mesajınızı yazın..."></textarea><br>
+    <button id="sendBtn">Gönder</button>
   </div>
 </div>
 
 <script>
-const appPrefix = "secure-p2p-multichat-";
-new Vue({
-  el: "#app",
-  data: {
-    screen: "login",
-    usernameInput: localStorage.getItem("username") || "",
-    avatar: localStorage.getItem("avatar") || "",
-    peerError: "",
-    loading: false,
-    peer: {},
-    targetIdInput: "",
-    peerIds: [],
-    connections: {},
-    chats: JSON.parse(localStorage.getItem("privateChats") || "[]"),
-    generalChats: JSON.parse(localStorage.getItem("generalChats") || "[]"),
-    chatMessageInput: "",
-    attachedFile: null,
-    currentTab: "general"
-  },
-  watch: {
-    chats() {
-      localStorage.setItem("privateChats", JSON.stringify(this.chats));
-    },
-    generalChats() {
-      localStorage.setItem("generalChats", JSON.stringify(this.generalChats));
-    }
-  },
-  methods: {
-    getPeerId(name) {
-      return appPrefix + name;
-    },
-    getUsername(id) {
-      return id.replace(appPrefix, "");
-    },
-    onAvatarChange(e) {
-      const file = e.target.files[0];
-      if (file && file.size < 5 * 1024 * 1024) {
-        const r = new FileReader();
-        r.onload = e => {
-          this.avatar = e.target.result;
-          localStorage.setItem("avatar", this.avatar);
-        };
-        r.readAsDataURL(file);
-      }
-    },
-    onFileChange(e) {
-      const file = e.target.files[0];
-      if (file && file.size <= 50 * 1024 * 1024) {
-        const r = new FileReader();
-        r.onload = e => {
-          this.attachedFile = {
-            name: file.name,
-            type: file.type,
-            url: e.target.result
-          };
-        };
-        r.readAsDataURL(file);
-      }
-    },
-    submitLogin(e) {
-      e.preventDefault();
-      if (!this.usernameInput) return;
-      localStorage.setItem("username", this.usernameInput);
-      this.peer = new Peer(this.getPeerId(this.usernameInput));
-      this.peer.on("open", () => {
-        this.screen = "chat";
-        this.loading = false;
-      });
-      this.peer.on("connection", conn => {
-        this.configureConnection(conn);
-      });
-      this.peer.on("error", err => {
-        this.peerError = err.message;
-        this.loading = false;
-      });
-    },
-    submitConnection(e) {
-      e.preventDefault();
-      const id = this.getPeerId(this.targetIdInput);
-      const conn = this.peer.connect(id, {
-        metadata: { peerIds: this.peerIds },
-        serialization: "json"
-      });
-      this.configureConnection(conn);
-    },
-    configureConnection(conn) {
-      this.connections[conn.peer] = conn;
-      this.peerIds = Object.keys(this.connections);
-      conn.on("data", data => {
-        if (data.type === "chat") this.chats.push(data.chat);
-        if (data.type === "connections") {
-          data.peerIds.forEach(pid => {
-            if (!this.connections[pid]) {
-              const c = this.peer.connect(pid, { metadata: { peerIds: this.peerIds }, serialization: "json" });
-              this.configureConnection(c);
-            }
-          });
-        }
-      });
-    },
-    disconnectPeer() {
-      this.peer.disconnect();
-    },
-    submitChat(e) {
-      e.preventDefault();
-      const isGeneral = this.currentTab === "general";
-      const chat = {
-        sender: this.usernameInput,
-        message: this.chatMessageInput,
-        avatar: this.avatar,
-        file: this.attachedFile,
-        timestamp: Date.now()
-      };
-      if (isGeneral) {
-        this.generalChats.push(chat);
+  let peer, conn;
+  const chat = document.getElementById("chat");
+  const usernameInput = document.getElementById("username");
+  const receiverInput = document.getElementById("receiver");
+  const modeSelect = document.getElementById("mode");
+  const privateUserField = document.getElementById("privateUserField");
+  const chatArea = document.getElementById("chatArea");
+  const connectBtn = document.getElementById("connectBtn");
+  const sendBtn = document.getElementById("sendBtn");
+
+  modeSelect.addEventListener("change", () => {
+    privateUserField.style.display = modeSelect.value === "özel" ? "block" : "none";
+  });
+
+  connectBtn.addEventListener("click", () => {
+    const username = usernameInput.value.trim();
+    if (!username) return alert("Lütfen kullanıcı adınızı girin.");
+    peer = new Peer(username, { debug: 2 });
+
+    peer.on("open", id => {
+      chatArea.style.display = "block";
+      const mode = modeSelect.value;
+      document.getElementById("roomTitle").innerText = mode === "genel" ? "Genel Chat Odası" : `Özel Chat (${receiverInput.value})`;
+
+      if (mode === "genel") {
+        conn = peer.connect("public-room");
       } else {
-        this.chats.push(chat);
-        Object.values(this.connections).forEach(conn =>
-          conn.send({ type: "chat", chat })
-        );
+        const receiver = receiverInput.value.trim();
+        if (!receiver) return alert("Özel mesaj için bir kullanıcı adı girin.");
+        conn = peer.connect(receiver);
       }
-      this.chatMessageInput = "";
-      this.attachedFile = null;
-    }
+
+      conn.on("open", () => {
+        conn.on("data", data => {
+          addMessage(data, "other");
+        });
+      });
+    });
+
+    peer.on("connection", incoming => {
+      incoming.on("data", data => {
+        conn = incoming;
+        addMessage(data, "other");
+      });
+    });
+  });
+
+  sendBtn.addEventListener("click", () => {
+    const msg = document.getElementById("messageInput").value.trim();
+    if (!msg || !conn || !conn.open) return;
+    conn.send(msg);
+    addMessage(msg, "you");
+    document.getElementById("messageInput").value = "";
+  });
+
+  function addMessage(msg, who) {
+    const div = document.createElement("div");
+    div.className = `message ${who}`;
+    div.textContent = `${who === "you" ? "Siz" : "Diğeri"}: ${msg}`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
   }
-});
 </script>
+
 </body>
 </html>
