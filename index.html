@@ -43,25 +43,57 @@
       border:2px solid #888;
       object-fit:cover;
       cursor:pointer;
+      background:#eee;
     }
     #profile input[type=file] { display:none; }
     #username { width:100%; padding:8px; margin-top:8px; border:1px solid #ccc; border-radius:4px; }
-    #saveProfile { margin-top:8px; width:100%; }
+    #saveProfile { 
+      margin-top:8px; 
+      width:100%;
+      padding:8px;
+      background:#0288d1;
+      color:white;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
+    #userIdDisplay {
+      margin-top:8px;
+      font-size:12px;
+      word-break:break-all;
+      background:#f5f5f5;
+      padding:6px;
+      border-radius:4px;
+    }
+    #copyIdBtn {
+      margin-top:4px;
+      padding:4px;
+      font-size:12px;
+      background:#e0e0e0;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
 
     #addFriend {
       margin-bottom:16px;
+      display:flex;
     }
     #addFriend input {
-      width: calc(100% - 48px);
-      padding:6px;
+      flex:1;
+      padding:8px;
       border:1px solid #ccc;
-      border-radius:4px;
+      border-radius:4px 0 0 4px;
+      border-right:none;
     }
     #addFriend button {
       width:40px;
       height:36px;
-      margin-left:4px;
-      vertical-align:top;
+      background:#0288d1;
+      color:white;
+      border:none;
+      border-radius:0 4px 4px 0;
+      cursor:pointer;
     }
     #friendsList {
       flex:1;
@@ -69,11 +101,23 @@
       list-style:none;
     }
     #friendsList li {
-      padding:8px;
+      padding:12px;
       border-bottom:1px solid #eee;
       cursor:pointer;
+      display:flex;
+      align-items:center;
     }
     #friendsList li.active { background:#e0f7fa; }
+    #friendsList li img {
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      margin-right:8px;
+      object-fit:cover;
+    }
+    #friendsList li .friend-name {
+      flex:1;
+    }
     /* --------------- Sağ Panel (Sohbet) --------------- */
     #chatPanel {
       flex:1;
@@ -102,6 +146,15 @@
       background:#fafafa;
       border-bottom:1px solid #eee;
       font-weight:500;
+      display:flex;
+      align-items:center;
+    }
+    #chatHeader img {
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      margin-right:8px;
+      object-fit:cover;
     }
     .chatWindow {
       flex:1;
@@ -135,6 +188,12 @@
       bottom:-14px;
       right:8px;
     }
+    .message.them .meta {
+      color:#000;
+    }
+    .message.me .meta {
+      color:#fff;
+    }
     #inputArea {
       display:flex;
       padding:12px;
@@ -156,10 +215,20 @@
       color:#fff;
       border-radius:4px;
       cursor:pointer;
+      height:36px;
     }
     #inputArea .attach-btn {
       background:transparent;
       color:#555;
+    }
+    .empty-chat {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      color:#888;
+      text-align:center;
     }
   </style>
 </head>
@@ -174,11 +243,13 @@
       <input type="file" id="profile-input" accept="image/*"/>
       <input type="text" id="username" placeholder="Kullanıcı adın"/>
       <button id="saveProfile">Kaydet</button>
+      <div id="userIdDisplay"></div>
+      <button id="copyIdBtn">ID'yi Kopyala</button>
     </div>
 
     <!-- Arkadaş Ekle -->
     <div id="addFriend">
-      <input type="text" id="friendIdInput" placeholder="Arkadaş ID’si"/>
+      <input type="text" id="friendIdInput" placeholder="Arkadaş ID'si"/>
       <button id="addFriendBtn" title="Ekle"><span class="material-icons">person_add</span></button>
     </div>
 
@@ -195,18 +266,26 @@
     </div>
 
     <!-- Başlık -->
-    <div id="chatHeader">Genel Sohbet</div>
+    <div id="chatHeader">
+      <img id="headerImg" src="" style="display:none;"/>
+      <span id="headerText">Genel Sohbet</span>
+    </div>
 
     <!-- Genel Sohbet Penceresi -->
     <div id="generalWindow" class="chatWindow"></div>
     <!-- Özel Sohbet Penceresi -->
-    <div id="privateWindow" class="chatWindow private" style="display:none;"></div>
+    <div id="privateWindow" class="chatWindow private" style="display:none;">
+      <div class="empty-chat">
+        <span class="material-icons" style="font-size:48px; margin-bottom:8px;">person</span>
+        <p>Bir arkadaş seçerek özel sohbet başlatın</p>
+      </div>
+    </div>
 
     <!-- Mesaj Giriş Alanı -->
     <div id="inputArea">
       <button class="attach-btn" id="attachBtn" title="Dosya Ekle"><span class="material-icons">attach_file</span></button>
       <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.zip"/>
-      <input type="text" id="messageInput" placeholder="Mesaj yaz..."/>
+      <input type="text" id="messageInput" placeholder="Mesaj yaz..." autocomplete="off"/>
       <button id="sendBtn">Gönder</button>
     </div>
   </div>
@@ -232,11 +311,15 @@
   const profileIn    = document.getElementById('profile-input');
   const usernameIn   = document.getElementById('username');
   const saveProfile  = document.getElementById('saveProfile');
+  const userIdDisplay = document.getElementById('userIdDisplay');
+  const copyIdBtn    = document.getElementById('copyIdBtn');
   const friendIn     = document.getElementById('friendIdInput');
   const addFriendBtn = document.getElementById('addFriendBtn');
   const friendsList  = document.getElementById('friendsList');
   const tabs         = document.querySelectorAll('#tabs button');
   const header       = document.getElementById('chatHeader');
+  const headerImg    = document.getElementById('headerImg');
+  const headerText   = document.getElementById('headerText');
   const genWin       = document.getElementById('generalWindow');
   const privWin      = document.getElementById('privateWindow');
   const attachBtn    = document.getElementById('attachBtn');
@@ -244,11 +327,12 @@
   const msgInput     = document.getElementById('messageInput');
   const sendBtn      = document.getElementById('sendBtn');
 
-  // -------- LocalStorage’dan Verileri Al --------
+  // -------- LocalStorage'dan Verileri Al --------
   let userId   = localStorage.getItem('userId');
   let username = localStorage.getItem('username');
   let profilePic = localStorage.getItem('profilePic');
   let friends  = JSON.parse(localStorage.getItem('friends')||'[]');
+  let friendProfiles = JSON.parse(localStorage.getItem('friendProfiles')||'{}');
 
   // -------- Otomatik User ID Oluştur --------
   if(!userId){
@@ -256,14 +340,38 @@
     localStorage.setItem('userId', userId);
   }
   usernameIn.value = username || '';
-  if(profilePic) profileImg.src = profilePic;
+  userIdDisplay.textContent = `ID: ${userId}`;
+  if(profilePic) {
+    profileImg.src = profilePic;
+  } else {
+    // Varsayılan avatar oluştur
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'U')}&background=random`;
+    profileImg.src = defaultAvatar;
+    profilePic = defaultAvatar;
+  }
+
+  // -------- ID Kopyalama --------
+  copyIdBtn.onclick = () => {
+    navigator.clipboard.writeText(userId).then(() => {
+      copyIdBtn.textContent = 'Kopyalandı!';
+      setTimeout(() => copyIdBtn.textContent = 'ID\'yi Kopyala', 2000);
+    });
+  };
 
   // -------- Profil Kaydetme --------
   saveProfile.onclick = () => {
-    username = usernameIn.value.trim()||username||'Anonim';
+    username = usernameIn.value.trim() || 'Anonim';
     localStorage.setItem('username', username);
+    
+    // Profil bilgilerini Firebase'e kaydet
+    db.ref('users/' + userId).set({
+      username: username,
+      profilePic: profilePic
+    });
+    
     alert('Profil güncellendi!');
   };
+  
   profileImg.onclick = () => profileIn.click();
   profileIn.onchange = e => {
     const f = e.target.files[0]; if(!f) return;
@@ -272,6 +380,13 @@
       profilePic = ev.target.result;
       profileImg.src  = profilePic;
       localStorage.setItem('profilePic', profilePic);
+      
+      // Profil resmini Firebase'e kaydet
+      if(username) {
+        db.ref('users/' + userId).update({
+          profilePic: profilePic
+        });
+      }
     };
     r.readAsDataURL(f);
   };
@@ -279,47 +394,125 @@
   // -------- Arkadaş Listesi --------
   function renderFriends(){
     friendsList.innerHTML = '';
-    friends.forEach(fid=>{
+    if(friends.length === 0) {
+      const empty = document.createElement('li');
+      empty.textContent = 'Arkadaş eklemek için yukarıdaki alanı kullanın';
+      empty.style.cursor = 'default';
+      empty.style.color = '#888';
+      friendsList.appendChild(empty);
+      return;
+    }
+    
+    friends.forEach(fid => {
       const li = document.createElement('li');
-      li.textContent = fid;
-      li.onclick = ()=>{
+      
+      // Arkadaşın profil resmini göster
+      const img = document.createElement('img');
+      img.src = friendProfiles[fid]?.profilePic || 'https://ui-avatars.com/api/?name=U&background=random';
+      li.appendChild(img);
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'friend-name';
+      nameSpan.textContent = friendProfiles[fid]?.username || fid;
+      li.appendChild(nameSpan);
+      
+      li.onclick = () => {
         currentTab = 'private';
         switchTab();
         selectFriend(fid);
       };
+      
       friendsList.appendChild(li);
     });
   }
-  addFriendBtn.onclick = ()=>{
+  
+  // Arkadaş profillerini güncelle
+  function updateFriendProfiles() {
+    friends.forEach(fid => {
+      db.ref('users/' + fid).once('value').then(snap => {
+        if(snap.exists()) {
+          friendProfiles[fid] = snap.val();
+          localStorage.setItem('friendProfiles', JSON.stringify(friendProfiles));
+          renderFriends();
+        }
+      });
+    });
+  }
+  
+  addFriendBtn.onclick = () => {
     const fid = friendIn.value.trim();
-    if(!fid||fid===userId) return alert('Geçerli bir ID girin.');
-    if(friends.includes(fid)) return alert('Zaten ekli.');
-    friends.push(fid);
-    localStorage.setItem('friends', JSON.stringify(friends));
-    renderFriends();
-    friendIn.value = '';
+    if(!fid || fid === userId) return alert('Geçerli bir ID girin.');
+    if(friends.includes(fid)) return alert('Bu kullanıcı zaten listenizde.');
+    
+    // Önce bu ID'nin geçerli olup olmadığını kontrol et
+    db.ref('users/' + fid).once('value').then(snap => {
+      if(!snap.exists()) return alert('Bu ID\'ye sahip kullanıcı bulunamadı.');
+      
+      friends.push(fid);
+      localStorage.setItem('friends', JSON.stringify(friends));
+      
+      // Arkadaşın profil bilgilerini al
+      db.ref('users/' + fid).once('value').then(snap => {
+        friendProfiles[fid] = snap.val();
+        localStorage.setItem('friendProfiles', JSON.stringify(friendProfiles));
+        renderFriends();
+        friendIn.value = '';
+      });
+    });
   };
+  
+  // Enter tuşu ile arkadaş ekleme
+  friendIn.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') addFriendBtn.click();
+  });
+
+  // Başlangıçta arkadaş listesini render et ve profilleri güncelle
   renderFriends();
+  updateFriendProfiles();
 
   // -------- Sekme Geçişi --------
   let currentTab = 'general';
-  tabs.forEach(btn=>{
-    btn.onclick = ()=>{
+  let currentFriend = null;
+  
+  tabs.forEach(btn => {
+    btn.onclick = () => {
       currentTab = btn.dataset.tab;
       switchTab();
     };
   });
+  
   function switchTab(){
-    tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===currentTab));
-    header.textContent = currentTab==='general' ? 'Genel Sohbet' : 'Özel Sohbet';
-    genWin.style.display = currentTab==='general' ? 'flex' : 'none';
-    privWin.style.display= currentTab==='private'? 'flex' : 'none';
+    tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+    
+    if(currentTab === 'general') {
+      headerText.textContent = 'Genel Sohbet';
+      headerImg.style.display = 'none';
+      genWin.style.display = 'flex';
+      privWin.style.display = 'none';
+    } else {
+      if(currentFriend) {
+        const friend = friendProfiles[currentFriend];
+        headerText.textContent = friend?.username || currentFriend;
+        headerImg.src = friend?.profilePic || 'https://ui-avatars.com/api/?name=U&background=random';
+        headerImg.style.display = 'inline';
+      } else {
+        headerText.textContent = 'Özel Sohbet';
+        headerImg.style.display = 'none';
+      }
+      genWin.style.display = 'none';
+      privWin.style.display = 'flex';
+    }
   }
 
   // -------- Mesaj Gönderme --------
-  attachBtn.onclick = ()=> fileInput.click();
+  attachBtn.onclick = () => fileInput.click();
   sendBtn.onclick = sendMessage;
-  fileInput.onchange = ()=> sendMessage(); // dosya yüklendiğinde de gönder
+  msgInput.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') sendMessage();
+  });
+  fileInput.onchange = () => {
+    if(fileInput.files[0]) sendMessage();
+  };
 
   function sendMessage(){
     const txt = msgInput.value.trim();
@@ -327,102 +520,153 @@
     if(!txt && !file) return;
 
     const now = Date.now();
-    const baseRef = currentTab==='general'
+    const baseRef = currentTab === 'general'
       ? db.ref('chats/general')
       : db.ref('chats/private/' + sortedChatId);
 
-    // önce dosya yükle, sonra mesajı DB’ye it:
+    // önce dosya yükle, sonra mesajı DB'ye it:
     if(file){
       const ext = file.name.split('.').pop();
       const path = `${currentTab}/${userId}_${now}.${ext}`;
       const uploadTask = storage.ref(path).put(file);
-      uploadTask.on('state_changed',null,console.error, ()=>{
-        uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+      uploadTask.on('state_changed', null, console.error, () => {
+        uploadTask.snapshot.ref.getDownloadURL().then(url => {
           pushMsg(baseRef, txt, url, file.type);
         });
       });
     } else {
       pushMsg(baseRef, txt, null, null);
     }
-    msgInput.value=''; fileInput.value=null;
+    msgInput.value = ''; 
+    fileInput.value = null;
   }
 
   function pushMsg(ref, text, fileUrl, fileType){
     ref.push({
       senderId: userId,
-      senderName: username||'Anonim',
-      senderPic: profilePic||'',
-      text: text||'',
-      fileUrl:fileUrl||'',
-      fileType:fileType||'',
+      senderName: username || 'Anonim',
+      senderPic: profilePic || '',
+      text: text || '',
+      fileUrl: fileUrl || '',
+      fileType: fileType || '',
       timestamp: Date.now()
     });
   }
 
   // -------- Genel Sohbet Dinleyici --------
-  db.ref('chats/general').on('child_added',snap=>{
+  db.ref('chats/general').on('child_added', snap => {
     renderMessage(snap.val(), genWin);
   });
 
   // -------- Özel Sohbet Dinleme --------
   let sortedChatId = '';
   function selectFriend(fid){
+    currentFriend = fid;
     sortedChatId = [userId, fid].sort().join('_');
-    privWin.innerHTML='';
-    // önceki dinleyiciyi kapat:
-    db.ref('chats/private').off();
-    // yeni dinleyici
-    db.ref('chats/private/'+sortedChatId)
-      .on('child_added',snap=> renderMessage(snap.val(), privWin));
+    
+    // Özel sohbet penceresini temizle ve başlığı güncelle
+    privWin.innerHTML = '';
+    switchTab();
+    
+    // Önceki dinleyiciyi kapat:
+    db.ref('chats/private/' + sortedChatId).off();
+    
+    // Yeni dinleyici
+    db.ref('chats/private/' + sortedChatId)
+      .on('child_added', snap => renderMessage(snap.val(), privWin));
   }
 
-  // -------- Mesajı DOM’a Ekle --------
+  // -------- Mesajı DOM'a Ekle --------
   function renderMessage(msg, container){
-    const div = document.createElement('div');
-    div.className = 'message ' + (msg.senderId===userId?'me':'them');
-    // Profil resmi
-    if(msg.senderPic){
-      const img = document.createElement('img');
-      img.src=msg.senderPic;
-      img.style.width='24px';
-      img.style.height='24px';
-      img.style.borderRadius='50%';
-      img.style.verticalAlign='middle';
-      img.style.marginRight='6px';
-      div.appendChild(img);
+    // Eğer boş mesaj penceresindeysek temizle
+    if(container.querySelector('.empty-chat')) {
+      container.innerHTML = '';
     }
+    
+    const div = document.createElement('div');
+    div.className = 'message ' + (msg.senderId === userId ? 'me' : 'them');
+    
+    // Mesaj içeriği
+    const content = document.createElement('div');
+    
+    // Gönderen bilgisi (sadece başkalarının mesajlarında)
+    if(msg.senderId !== userId) {
+      const sender = document.createElement('div');
+      sender.style.fontWeight = 'bold';
+      sender.style.marginBottom = '4px';
+      
+      if(msg.senderPic) {
+        const img = document.createElement('img');
+        img.src = msg.senderPic;
+        img.style.width = '20px';
+        img.style.height = '20px';
+        img.style.borderRadius = '50%';
+        img.style.marginRight = '6px';
+        img.style.verticalAlign = 'middle';
+        sender.appendChild(img);
+      }
+      
+      sender.appendChild(document.createTextNode(msg.senderName));
+      content.appendChild(sender);
+    }
+    
     // Metin
-    const span = document.createElement('span');
-    span.innerText = msg.text;
-    div.appendChild(span);
+    if(msg.text) {
+      const span = document.createElement('span');
+      span.innerText = msg.text;
+      content.appendChild(span);
+    }
+    
     // Dosya
-    if(msg.fileUrl){
+    if(msg.fileUrl) {
       const br = document.createElement('br');
-      div.appendChild(br);
-      if(msg.fileType.startsWith('image')){
+      content.appendChild(br);
+      
+      if(msg.fileType.startsWith('image')) {
         const i = document.createElement('img');
-        i.src=msg.fileUrl;
-        i.style.maxWidth='200px';
-        div.appendChild(i);
-      } else if(msg.fileType.startsWith('video')){
+        i.src = msg.fileUrl;
+        i.style.maxWidth = '200px';
+        i.style.maxHeight = '200px';
+        i.style.borderRadius = '8px';
+        i.style.marginTop = '4px';
+        content.appendChild(i);
+      } else if(msg.fileType.startsWith('video')) {
         const v = document.createElement('video');
-        v.src=msg.fileUrl; v.controls=true; v.style.maxWidth='200px';
-        div.appendChild(v);
+        v.src = msg.fileUrl; 
+        v.controls = true; 
+        v.style.maxWidth = '200px';
+        v.style.maxHeight = '200px';
+        v.style.borderRadius = '8px';
+        v.style.marginTop = '4px';
+        content.appendChild(v);
       } else {
         const a = document.createElement('a');
-        a.href=msg.fileUrl; a.target='_blank';
-        a.innerText='Dosyayı İndir';
-        div.appendChild(a);
+        a.href = msg.fileUrl; 
+        a.target = '_blank';
+        a.innerText = 'Dosyayı İndir';
+        a.style.display = 'inline-block';
+        a.style.marginTop = '4px';
+        a.style.color = msg.senderId === userId ? '#fff' : '#0288d1';
+        content.appendChild(a);
       }
     }
+    
+    div.appendChild(content);
+    
     // Zaman
     const meta = document.createElement('div');
-    meta.className='meta';
-    meta.innerText = new Date(msg.timestamp).toLocaleTimeString();
+    meta.className = 'meta';
+    meta.innerText = formatTime(msg.timestamp);
     div.appendChild(meta);
 
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
+  }
+  
+  // Zamanı formatla
+  function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   }
 
   // İlk sekme ayarı
