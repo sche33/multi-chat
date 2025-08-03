@@ -3,1240 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Gerçek Zamanlı Chat</title>
-
-    <!-- PeerJS for WebRTC connections -->
+    <title>Basit Chat Uygulaması</title>
+    
+    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <!-- Vue.js for reactive UI -->
+    <!-- Vue.js -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
-    <!-- Materialize CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    
-    <!-- Custom CSS -->
     <style>
-        :root {
-            --primary-color: #4285f4;
-            --secondary-color: #34a853;
-            --danger-color: #ea4335;
-            --warning-color: #fbbc05;
-            --dark-color: #202124;
-            --light-color: #f8f9fa;
-            --sidebar-width: 280px;
-            --rank-icon-size: 28px;
-        }
-
-        * {
-            box-sizing: border-box;
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
             background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
         }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-        }
-
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            position: fixed;
-            height: 100vh;
-            z-index: 10;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar-header {
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
             padding: 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
-
-        .sidebar-content {
-            padding: 20px;
-            overflow-y: auto;
-            height: calc(100vh - 120px);
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 15px;
-            border: 2px solid var(--primary-color);
-        }
-
-        .user-info {
-            flex-grow: 1;
-        }
-
-        .user-name {
-            font-weight: 500;
-            margin-bottom: 3px;
-        }
-
-        .user-rank {
-            display: flex;
-            align-items: center;
-        }
-
-        .rank-badge {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .rank-icon {
-            width: var(--rank-icon-size);
-            height: var(--rank-icon-size);
-            margin-left: 5px;
-            object-fit: contain;
-        }
-
-        .logout-btn {
-            display: flex;
-            align-items: center;
-            color: var(--danger-color);
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        /* Main Content Styles */
-        .main-content {
-            flex-grow: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .top-nav {
-            background-color: white;
-            padding: 15px 25px;
+        
+        .login-box, .chat-box {
+            background: white;
+            border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 5;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-
-        .nav-title {
-            font-size: 1.5rem;
-            font-weight: 600;
+        
+        h1 {
+            text-align: center;
+            color: #333;
         }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
-
-        .content-area {
-            flex-grow: 1;
-            padding: 25px;
-            background-color: #f9f9f9;
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
         }
-
-        /* Chat Container */
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
         .chat-container {
             display: flex;
-            height: calc(100vh - 120px);
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            overflow: hidden;
+            gap: 20px;
         }
-
+        
         .user-list {
-            width: 300px;
-            border-right: 1px solid #eee;
-            overflow-y: auto;
-            background-color: #fafafa;
-        }
-
-        .user-list-header {
+            width: 250px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 15px;
-            border-bottom: 1px solid #eee;
-            font-weight: 500;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-
+        
         .user-item {
-            padding: 12px 15px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
             cursor: pointer;
-            transition: background-color 0.2s;
         }
-
+        
         .user-item:hover {
-            background-color: #f0f0f0;
+            background-color: #f9f9f9;
         }
-
-        .user-item-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
+        
+        .user-item.active {
+            background-color: #e9f5ff;
         }
-
-        .user-item-info {
-            flex-grow: 1;
-        }
-
-        .user-item-name {
-            font-weight: 500;
-            margin-bottom: 3px;
-            display: flex;
-            align-items: center;
-        }
-
-        .user-item-rank {
-            font-size: 0.75rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-        }
-
-        .user-status {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-left: 8px;
-        }
-
-        .status-online {
-            background-color: var(--secondary-color);
-        }
-
-        .status-offline {
-            background-color: #ccc;
-        }
-
-        .add-friend-btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-
-        /* Chat Area */
+        
         .chat-area {
-            flex-grow: 1;
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
         }
-
-        .chat-header {
+        
+        .messages {
+            flex: 1;
             padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-
-        .chat-messages {
-            flex-grow: 1;
-            padding: 20px;
             overflow-y: auto;
-            background-color: #f5f5f5;
+            max-height: 500px;
         }
-
+        
         .message {
             margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
             max-width: 70%;
         }
-
-        .message-sender {
-            font-weight: 500;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
-
-        .message-content {
-            padding: 10px 15px;
-            border-radius: 18px;
-            position: relative;
-            word-wrap: break-word;
-        }
-
-        .message-incoming {
+        
+        .message.incoming {
+            background-color: #f1f1f1;
             align-self: flex-start;
         }
-
-        .message-incoming .message-content {
-            background-color: white;
-            border-top-left-radius: 5px;
-        }
-
-        .message-outgoing {
+        
+        .message.outgoing {
+            background-color: #4CAF50;
+            color: white;
             align-self: flex-end;
         }
-
-        .message-outgoing .message-content {
-            background-color: var(--primary-color);
-            color: white;
-            border-top-right-radius: 5px;
-        }
-
-        .message-image {
-            max-width: 300px;
-            max-height: 300px;
-            border-radius: 8px;
-            margin-top: 5px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .message-image:hover {
-            transform: scale(1.02);
-        }
-
-        .message-file {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-            background-color: white;
-            border-radius: 18px;
-            text-decoration: none;
-            color: #333;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-        }
-
-        .message-file:hover {
-            background-color: #f0f0f0;
-        }
-
-        .message-time {
-            font-size: 0.75rem;
-            color: #999;
-            margin-top: 5px;
-            text-align: right;
-        }
-
-        .chat-input {
+        
+        .message-input-area {
+            display: flex;
             padding: 15px;
             border-top: 1px solid #eee;
-            background-color: white;
         }
-
-        .input-area {
-            display: flex;
-            align-items: center;
-        }
-
+        
         .message-input {
-            flex-grow: 1;
+            flex: 1;
+            padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 24px;
-            padding: 12px 20px;
-            outline: none;
-            font-size: 1rem;
-            resize: none;
-            max-height: 120px;
-        }
-
-        .message-input:focus {
-            border-color: var(--primary-color);
-        }
-
-        .action-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .action-btn:hover {
-            background-color: #f0f0f0;
-        }
-
-        .action-btn.primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .action-btn.primary:hover {
-            background-color: #3367d6;
-        }
-
-        /* Admin Panel Styles */
-        .admin-panel {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        .admin-section {
-            margin-bottom: 30px;
-        }
-
-        .admin-section-title {
-            font-size: 1.25rem;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-
-        .admin-section-title i {
+            border-radius: 4px;
             margin-right: 10px;
-            color: var(--primary-color);
         }
-
-        .user-management {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
+        
+        .send-btn {
+            width: auto;
+            padding: 10px 20px;
         }
-
-        .user-card {
-            background-color: #fafafa;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        
+        .rank-icon {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+            vertical-align: middle;
         }
-
-        .user-card-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .user-card-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
-        }
-
-        .user-card-name {
-            font-weight: 500;
-        }
-
-        .user-card-rank {
-            font-size: 0.8rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-        }
-
-        .user-card-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
-
-        .role-select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+        
+        .error {
+            color: red;
             margin-top: 10px;
+            text-align: center;
         }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.8rem;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #3367d6;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #d33426;
-        }
-
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: #333;
-        }
-
-        .btn-warning:hover {
-            background-color: #e6ac00;
-        }
-
-        /* Rank Management */
-        .rank-management {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .rank-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid #eee;
-        }
-
-        .rank-card-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .rank-card-icon {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            margin-right: 15px;
-        }
-
-        .rank-card-name {
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-
-        .rank-card-requirements {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .rank-color-picker {
-            width: 100%;
-            height: 30px;
-            border: none;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-
-        .rank-upload-btn {
+        
+        .online-status {
             display: inline-block;
-            padding: 8px 12px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            text-align: center;
-            margin-top: 10px;
-            transition: background-color 0.2s;
-        }
-
-        .rank-upload-btn:hover {
-            background-color: #e0e0e0;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .modal-content {
-            background-color: white;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            transform: translateY(20px);
-            transition: transform 0.3s;
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .chat-container {
-                flex-direction: column;
-                height: auto;
-            }
-            .user-list {
-                width: 100%;
-                height: 300px;
-                border-right: none;
-                border-bottom: 1px solid #eee;
-            }
-        }
-
-        /* Utility Classes */
-        .hidden {
-            display: none !important;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-muted {
-            color: #999;
-        }
-
-        .mt-10 {
-            margin-top: 10px;
-        }
-
-        .mt-20 {
-            margin-top: 20px;
-        }
-
-        .mb-10 {
-            margin-bottom: 10px;
-        }
-
-        .mb-20 {
-            margin-bottom: 20px;
-        }
-
-        .full-width {
-            width: 100%;
-        }
-
-        /* Animation */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        /* Login & Register Styles */
-        .auth-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-
-        .auth-card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 450px;
-            padding: 30px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .auth-title {
-            text-align: center;
-            margin-bottom: 30px;
-            color: var(--dark-color);
-        }
-
-        .auth-logo {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .auth-form .input-field {
-            margin-bottom: 20px;
-        }
-
-        .auth-form label {
-            color: #666;
-        }
-
-        .auth-form input {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 12px 15px;
-            width: 100%;
-            font-size: 1rem;
-        }
-
-        .auth-form input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .auth-btn:hover {
-            background-color: #3367d6;
-        }
-
-        .auth-footer {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .auth-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .auth-link:hover {
-            text-decoration: underline;
-        }
-
-        .error-message {
-            color: var(--danger-color);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .password-field {
-            position: relative;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            top: 12px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        /* Avatar Selection */
-        .avatar-selection {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .avatar-option {
-            width: 60px;
-            height: 60px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
+            margin-left: 5px;
         }
-
-        .avatar-option.selected {
-            border-color: var(--primary-color);
-            transform: scale(1.1);
+        
+        .online {
+            background-color: #4CAF50;
+        }
+        
+        .offline {
+            background-color: #ccc;
         }
     </style>
 </head>
-
 <body>
     <div id="app">
-        <!-- Authentication Screens -->
-        <div v-if="screen === 'login' || screen === 'register'" class="auth-container">
-            <div class="auth-card">
-                <div class="auth-title">
-                    <div class="auth-logo">
-                        <i class="material-icons">forum</i>
-                    </div>
-                    <h2>{{ screen === 'login' ? 'Giriş Yap' : 'Hesap Oluştur' }}</h2>
-                </div>
-
-                <form class="auth-form" @submit.prevent="screen === 'login' ? submitLogin() : submitRegister()">
-                    <div class="input-field">
-                        <label for="username">Kullanıcı Adı</label>
-                        <input 
-                            id="username" 
-                            type="text" 
-                            v-model="screen === 'login' ? loginUsername : registerUsername" 
-                            required
-                        >
-                    </div>
-
-                    <div class="input-field password-field">
-                        <label for="password">Şifre</label>
-                        <input 
-                            id="password" 
-                            :type="showPassword ? 'text' : 'password'" 
-                            v-model="screen === 'login' ? loginPassword : registerPassword" 
-                            required
-                        >
-                        <i class="material-icons password-toggle" @click="showPassword = !showPassword">
-                            {{ showPassword ? 'visibility_off' : 'visibility' }}
-                        </i>
-                    </div>
-
-                    <div v-if="screen === 'register'" class="input-field">
-                        <label for="confirm-password">Şifreyi Onayla</label>
-                        <input 
-                            id="confirm-password" 
-                            :type="showPassword ? 'text' : 'password'" 
-                            v-model="registerPasswordConfirm" 
-                            required
-                        >
-                    </div>
-
-                    <div v-if="screen === 'register'" class="input-field">
-                        <label>Profil Resmi Seç</label>
-                        <div class="avatar-selection">
-                            <img 
-                                v-for="(avatar, index) in avatarOptions" 
-                                :key="index"
-                                :src="avatar" 
-                                class="avatar-option" 
-                                :class="{ selected: selectedAvatar === avatar }"
-                                @click="selectedAvatar = avatar"
-                            >
-                        </div>
-                    </div>
-
-                    <div v-if="errorMessage" class="error-message">
-                        {{ errorMessage }}
-                    </div>
-
-                    <button type="submit" class="auth-btn" :disabled="loading">
-                        {{ loading ? 'Yükleniyor...' : (screen === 'login' ? 'Giriş Yap' : 'Kayıt Ol') }}
-                    </button>
-                </form>
-
-                <div class="auth-footer">
-                    <p v-if="screen === 'login'">
-                        Hesabınız yok mu? <a href="#" class="auth-link" @click.prevent="switchToRegister">Kayıt Ol</a>
-                    </p>
-                    <p v-else>
-                        Zaten hesabınız var mı? <a href="#" class="auth-link" @click.prevent="switchToLogin">Giriş Yap</a>
-                    </p>
-                </div>
+        <!-- Giriş Ekranı -->
+        <div v-if="screen === 'login'" class="container">
+            <div class="login-box">
+                <h1>Giriş Yap</h1>
+                <input type="text" v-model="username" placeholder="Kullanıcı Adı">
+                <input type="password" v-model="password" placeholder="Şifre">
+                <button @click="login">Giriş Yap</button>
+                <p class="error">{{ error }}</p>
             </div>
         </div>
-
-        <!-- Main Application -->
-        <div v-if="screen === 'chat'" class="app-container">
-            <!-- Sidebar -->
-            <div class="sidebar" :class="{ 'active': sidebarOpen }">
-                <div class="sidebar-header">
-                    <h3>Premium Chat</h3>
-                    <i class="material-icons" @click="sidebarOpen = false" style="cursor: pointer;">close</i>
+        
+        <!-- Chat Ekranı -->
+        <div v-if="screen === 'chat'" class="container">
+            <h1>Chat Uygulaması</h1>
+            
+            <div class="chat-container">
+                <!-- Kullanıcı Listesi -->
+                <div class="user-list">
+                    <h3>Kullanıcılar</h3>
+                    <div v-for="user in allUsers" 
+                         :key="user.username" 
+                         class="user-item"
+                         :class="{ active: selectedUser && selectedUser.username === user.username }"
+                         @click="selectUser(user)">
+                        {{ user.username }}
+                        <img v-if="getRole(user.role).icon" :src="getRole(user.role).icon" class="rank-icon">
+                        <span class="online-status" :class="isUserOnline(user.username) ? 'online' : 'offline'"></span>
+                    </div>
                 </div>
-
-                <div class="sidebar-content">
-                    <div class="user-profile">
-                        <img :src="currentUser.avatar" class="user-avatar" alt="Profile">
-                        <div class="user-info">
-                            <div class="user-name">{{ currentUser.username }}</div>
-                            <div class="user-rank">
-                                <span class="rank-badge" :style="{ backgroundColor: getRole(currentUser.role).color }">
-                                    {{ getRole(currentUser.role).name }}
-                                </span>
-                                <img v-if="getRole(currentUser.role).icon" :src="getRole(currentUser.role).icon" class="rank-icon" alt="Rank">
-                            </div>
+                
+                <!-- Chat Alanı -->
+                <div class="chat-area" v-if="selectedUser">
+                    <div class="messages">
+                        <div v-for="(message, index) in filteredMessages" 
+                             :key="index" 
+                             class="message"
+                             :class="message.sender === currentUser.username ? 'outgoing' : 'incoming'">
+                            <strong>{{ message.sender }}</strong>
+                            <p>{{ message.text }}</p>
+                            <small>{{ formatTime(message.timestamp) }}</small>
                         </div>
                     </div>
-
-                    <div class="logout-btn" @click="logout">
-                        <i class="material-icons" style="margin-right: 5px;">logout</i>
-                        Çıkış Yap
-                    </div>
-
-                    <!-- Admin Navigation -->
-                    <div v-if="currentUser.username === 'admin'" class="admin-nav mt-20">
-                        <h4>Admin Paneli</h4>
-                        <ul style="list-style: none; margin-top: 10px;">
-                            <li style="padding: 8px 0; cursor: pointer;" @click="activeAdminTab = 'users'">
-                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">people</i>
-                                Kullanıcı Yönetimi
-                            </li>
-                            <li style="padding: 8px 0; cursor: pointer;" @click="activeAdminTab = 'ranks'">
-                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">military_tech</i>
-                                Rol Yönetimi
-                            </li>
-                        </ul>
+                    
+                    <div class="message-input-area">
+                        <input type="text" 
+                               v-model="newMessage" 
+                               class="message-input" 
+                               placeholder="Mesaj yaz..."
+                               @keyup.enter="sendMessage">
+                        <button @click="sendMessage" class="send-btn">Gönder</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="main-content">
-                <!-- Top Navigation -->
-                <div class="top-nav">
-                    <div class="nav-title">
-                        <i class="material-icons" style="cursor: pointer; margin-right: 10px;" @click="sidebarOpen = true">menu</i>
-                        {{ activeAdminTab ? 'Admin Paneli' : 'Premium Chat' }}
-                    </div>
-                    <div class="nav-actions">
-                        <div class="user-info" style="display: flex; align-items: center;">
-                            <span style="margin-right: 10px;">{{ currentUser.username }}</span>
-                            <span class="rank-badge" :style="{ backgroundColor: getRole(currentUser.role).color }">
-                                {{ getRole(currentUser.role).name }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Content Area -->
-                <div class="content-area">
-                    <!-- Admin Panel -->
-                    <div v-if="currentUser.username === 'admin' && activeAdminTab">
-                        <div v-if="activeAdminTab === 'users'" class="admin-panel">
-                            <div class="admin-section">
-                                <h3 class="admin-section-title">
-                                    <i class="material-icons">people</i>
-                                    Kullanıcı Yönetimi
-                                </h3>
-                                <div class="user-management">
-                                    <div v-for="user in allUsers" class="user-card" :key="user.username">
-                                        <div class="user-card-header">
-                                            <img :src="user.avatar" class="user-card-avatar" alt="Profile">
-                                            <div>
-                                                <div class="user-card-name">{{ user.username }}</div>
-                                                <div class="user-card-rank">
-                                                    <span class="rank-badge" :style="{ backgroundColor: getRole(user.role).color }">
-                                                        {{ getRole(user.role).name }}
-                                                    </span>
-                                                    <span v-if="user.banned" style="color: var(--danger-color); margin-left: 5px;">(BANLI)</span>
-                                                    <span v-if="user.timeout && new Date(user.timeout) > new Date()" style="color: var(--warning-color); margin-left: 5px;">
-                                                        (Zaman Aşımı: {{ formatTimeout(user.timeout) }})
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <select class="role-select" v-model="user.role" @change="updateUserRole(user)">
-                                            <option v-for="(role, index) in roles" :value="index" :key="index">
-                                                {{ role.name }} ({{ role.messageReq }} mesaj)
-                                            </option>
-                                        </select>
-
-                                        <div class="user-card-actions">
-                                            <button v-if="!user.banned" class="btn btn-danger btn-sm" @click="toggleBan(user)">
-                                                Banla
-                                            </button>
-                                            <button v-else class="btn btn-danger btn-sm" @click="toggleBan(user)">
-                                                Banı Kaldır
-                                            </button>
-
-                                            <button class="btn btn-warning btn-sm" @click="openTimeoutModal(user)">
-                                                Zaman Aşımı
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="activeAdminTab === 'ranks'" class="admin-panel">
-                            <div class="admin-section">
-                                <h3 class="admin-section-title">
-                                    <i class="material-icons">military_tech</i>
-                                    Rol Yönetimi
-                                </h3>
-                                <div class="rank-management">
-                                    <div v-for="(role, index) in roles" class="rank-card" :key="index">
-                                        <div class="rank-card-header">
-                                            <img v-if="role.icon" :src="role.icon" class="rank-card-icon" alt="Rank Icon">
-                                            <i v-else class="material-icons rank-card-icon">military_tech</i>
-                                            <div>
-                                                <div class="rank-card-name">{{ role.name }}</div>
-                                                <div class="rank-card-requirements">{{ role.messageReq }} mesaj gerektirir</div>
-                                            </div>
-                                        </div>
-
-                                        <label>Rol Rengi:</label>
-                                        <input type="color" v-model="role.color" class="rank-color-picker" @change="saveRoles">
-
-                                        <label class="full-width mt-10">Apolet Resmi:</label>
-                                        <input type="file" :id="'rankIcon'+index" @change="handleRankIconUpload($event, index)" class="hidden">
-                                        <label :for="'rankIcon'+index" class="rank-upload-btn">
-                                            <i class="material-icons" style="vertical-align: middle; font-size: 16px;">upload</i>
-                                            Resim Yükle
-                                        </label>
-
-                                        <div v-if="role.icon" class="mt-10">
-                                            <img :src="role.icon" style="max-width: 100px; max-height: 100px; margin-top: 10px;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Chat Interface -->
-                    <div v-else class="chat-container">
-                        <!-- User List -->
-                        <div class="user-list">
-                            <div class="user-list-header">
-                                <span>Kullanıcılar</span>
-                                <span>{{ allUsers.length }} Toplam</span>
-                            </div>
-
-                            <div class="user-list-header">
-                                <span>Arkadaşlarım</span>
-                                <span>{{ friends.length }} Aktif</span>
-                            </div>
-
-                            <div v-for="friend in friends" class="user-item" :key="friend.username" @click="selectUser(friend)">
-                                <img :src="friend.avatar" class="user-item-avatar" alt="Profile">
-                                <div class="user-item-info">
-                                    <div class="user-item-name">
-                                        {{ friend.username }}
-                                        <span class="user-status" :class="isUserOnline(friend.username) ? 'status-online' : 'status-offline'"></span>
-                                    </div>
-                                    <div class="user-item-rank">
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(friend.role).color }">
-                                            {{ getRole(friend.role).name }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="user-list-header">
-                                <span>Diğer Kullanıcılar</span>
-                            </div>
-
-                            <div v-for="user in nonFriendUsers" class="user-item" :key="user.username">
-                                <img :src="user.avatar" class="user-item-avatar" alt="Profile">
-                                <div class="user-item-info">
-                                    <div class="user-item-name">
-                                        {{ user.username }}
-                                        <span class="user-status" :class="isUserOnline(user.username) ? 'status-online' : 'status-offline'"></span>
-                                    </div>
-                                    <div class="user-item-rank">
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(user.role).color }">
-                                            {{ getRole(user.role).name }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <button class="add-friend-btn" @click="addFriend(user)">
-                                    <i class="material-icons" style="font-size: 14px; vertical-align: middle;">person_add</i>
-                                    Ekle
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Chat Area -->
-                        <div class="chat-area">
-                            <div class="chat-header" v-if="selectedChatUser">
-                                <img :src="selectedChatUser.avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
-                                <div>
-                                    <div style="font-weight: 500;">{{ selectedChatUser.username }}</div>
-                                    <div style="font-size: 0.8rem; color: #666;">
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(selectedChatUser.role).color }">
-                                            {{ getRole(selectedChatUser.role).name }}
-                                        </span>
-                                        <span class="user-status" :class="isUserOnline(selectedChatUser.username) ? 'status-online' : 'status-offline'" style="margin-left: 5px;"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="chat-messages" v-if="selectedChatUser">
-                                <div v-for="(message, index) in filteredMessages" :key="index" 
-                                    class="message" 
-                                    :class="message.sender === currentUser.username ? 'message-outgoing' : 'message-incoming'"
-                                >
-                                    <div class="message-sender" v-if="shouldShowSender(message, index)">
-                                        {{ message.sender }}
-                                        <span class="rank-badge" :style="{ backgroundColor: getRole(getSenderRole(message.sender)).color }">
-                                            {{ getRoleName(getSenderRole(message.sender)) }}
-                                        </span>
-                                    </div>
-                                    <div class="message-content">
-                                        <span v-if="message.type === 'text'">{{ message.message }}</span>
-                                        <img v-if="message.type === 'image'" :src="message.content" class="message-image" @click="openImageModal(message.content)">
-                                        <a v-if="message.type === 'file'" :href="message.content" :download="message.filename" class="message-file">
-                                            <i class="material-icons" style="margin-right: 5px;">insert_drive_file</i>
-                                            {{ message.filename }} ({{ formatFileSize(message.size) }})
-                                        </a>
-                                    </div>
-                                    <div class="message-time">
-                                        {{ formatTime(message.timestamp) }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="chat-input" v-if="selectedChatUser">
-                                <div class="input-area">
-                                    <input 
-                                        type="text" 
-                                        class="message-input" 
-                                        v-model="chatMessageInput" 
-                                        placeholder="Mesaj yazın..."
-                                        @keyup.enter="sendMessage"
-                                        :disabled="isUserRestricted"
-                                    >
-                                    <div class="action-btn" @click="openFileInput('image')" :class="{ disabled: isUserRestricted }">
-                                        <i class="material-icons">image</i>
-                                        <input type="file" id="imageInput" class="hidden" accept="image/*" @change="handleImageUpload">
-                                    </div>
-                                    <div class="action-btn" @click="openFileInput('file')" :class="{ disabled: isUserRestricted }">
-                                        <i class="material-icons">attach_file</i>
-                                        <input type="file" id="fileInput" class="hidden" @change="handleFileUpload">
-                                    </div>
-                                    <div class="action-btn primary" @click="sendMessage" :class="{ disabled: isUserRestricted }">
-                                        <i class="material-icons">send</i>
-                                    </div>
-                                </div>
-                                <div v-if="isUserRestricted" class="error-message mt-10">
-                                    {{ restrictionMessage }}
-                                </div>
-                            </div>
-
-                            <div v-if="!selectedChatUser" class="text-center" style="padding: 50px; color: #999;">
-                                <i class="material-icons" style="font-size: 50px; margin-bottom: 20px;">forum</i>
-                                <h3>Sohbet Başlatın</h3>
-                                <p>Arkadaşlarınızdan birini seçerek sohbet başlatabilirsiniz</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Timeout Modal -->
-        <div class="modal-overlay" :class="{ 'active': timeoutModalOpen }">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>{{ selectedUser ? selectedUser.username : '' }} için Zaman Aşımı</h3>
-                    <i class="material-icons" @click="timeoutModalOpen = false" style="cursor: pointer;">close</i>
-                </div>
-                <div class="modal-body">
-                    <div class="input-field">
-                        <label for="timeout-minutes">Zaman Aşımı Süresi (dakika)</label>
-                        <input id="timeout-minutes" type="number" v-model="timeoutMinutes" min="1">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn" @click="timeoutModalOpen = false">İptal</button>
-                    <button class="btn btn-primary" @click="applyTimeout">Uygula</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Image Preview Modal -->
-        <div class="modal-overlay" :class="{ 'active': imagePreviewModalOpen }" @click="imagePreviewModalOpen = false">
-            <div class="modal-content" style="max-width: 90%; max-height: 90%;" @click.stop>
-                <div class="modal-header">
-                    <h3>Resim Önizleme</h3>
-                    <i class="material-icons" @click="imagePreviewModalOpen = false" style="cursor: pointer;">close</i>
-                </div>
-                <div class="modal-body" style="text-align: center;">
-                    <img :src="previewImage" style="max-width: 100%; max-height: 70vh;">
+                
+                <div v-else class="chat-area" style="text-align: center; padding: 50px;">
+                    <p>Bir kullanıcı seçerek sohbete başlayın</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const appPrefix = "premium-chat-";
-        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+        const appPrefix = "simple-chat-";
         const ADMIN_PASSWORD = "QSjL4wsz3ZexMvw2pyheHethZFmKyr7JAFVH8WN5wHW4Gvc8";
         const PEERJS_CONFIG = {
             host: 'peerjs-server-1.herokuapp.com',
@@ -1244,574 +242,178 @@
             port: 443
         };
 
-        // Default avatar options
-        const defaultAvatars = [
-            'https://i.imgur.com/JzT9Z7n.png',
-            'https://i.imgur.com/4Q7XZ9L.png',
-            'https://i.imgur.com/8XZ9L4Q.png',
-            'https://i.imgur.com/Z9L4Q8X.png',
-            'https://i.imgur.com/L4Q8XZ9.png',
-            'https://i.imgur.com/Q8XZ9L4.png',
-            'https://i.imgur.com/XZ9L4Q8.png',
-            'https://i.imgur.com/9L4Q8XZ.png'
-        ];
-
-        // Default rank icons
-        const defaultRankIcons = [
-            'https://i.imgur.com/JzT9Z7n.png', // Yeni Üye
-            'https://i.imgur.com/4Q7XZ9L.png', // Üye
-            'https://i.imgur.com/8XZ9L4Q.png', // Kıdemli Üye
-            'https://i.imgur.com/Z9L4Q8X.png', // Uzman
-            'https://i.imgur.com/L4Q8XZ9.png', // Kıdemli Uzman
-            'https://i.imgur.com/Q8XZ9L4.png', // Çavuş
-            'https://i.imgur.com/XZ9L4Q8.png', // Kıdemli Çavuş
-            'https://i.imgur.com/9L4Q8XZ.png', // Astsubay
-            'https://i.imgur.com/4Q8XZ9L.png', // Kıdemli Astsubay
-            'https://i.imgur.com/8XZ9L4Q.png', // Subay
-            'https://i.imgur.com/Z9L4Q8X.png', // Kıdemli Subay
-            'https://i.imgur.com/L4Q8XZ9.png', // Komutan
-            'https://i.imgur.com/Q8XZ9L4.png'  // Mareşal
+        // Rol tanımları
+        const roles = [
+            { name: "Yeni Üye", icon: "https://i.imgur.com/JzT9Z7n.png", messageReq: 0 },
+            { name: "Üye", icon: "https://i.imgur.com/4Q7XZ9L.png", messageReq: 100 },
+            { name: "Kıdemli Üye", icon: "https://i.imgur.com/8XZ9L4Q.png", messageReq: 300 },
+            { name: "Uzman", icon: "https://i.imgur.com/Z9L4Q8X.png", messageReq: 600 },
+            { name: "Kıdemli Uzman", icon: "https://i.imgur.com/L4Q8XZ9.png", messageReq: 1000 },
+            { name: "Çavuş", icon: "https://i.imgur.com/Q8XZ9L4.png", messageReq: 1500 },
+            { name: "Kıdemli Çavuş", icon: "https://i.imgur.com/XZ9L4Q8.png", messageReq: 2100 },
+            { name: "Astsubay", icon: "https://i.imgur.com/9L4Q8XZ.png", messageReq: 2800 },
+            { name: "Kıdemli Astsubay", icon: "https://i.imgur.com/4Q8XZ9L.png", messageReq: 3600 },
+            { name: "Subay", icon: "https://i.imgur.com/8XZ9L4Q.png", messageReq: 4500 },
+            { name: "Kıdemli Subay", icon: "https://i.imgur.com/Z9L4Q8X.png", messageReq: 5500 },
+            { name: "Komutan", icon: "https://i.imgur.com/L4Q8XZ9.png", messageReq: 6600 },
+            { name: "Mareşal", icon: "https://i.imgur.com/Q8XZ9L4.png", messageReq: 7800 }
         ];
 
         const app = new Vue({
             el: "#app",
             data: {
-                // Authentication
                 screen: "login",
-                loginUsername: "",
-                loginPassword: "",
-                registerUsername: "",
-                registerPassword: "",
-                registerPasswordConfirm: "",
-                errorMessage: "",
-                loading: false,
-                showPassword: false,
-                avatarOptions: defaultAvatars,
-                selectedAvatar: defaultAvatars[0],
+                username: "",
+                password: "",
+                error: "",
                 
-                // Main App
+                // Chat verileri
                 currentUser: null,
                 allUsers: [],
-                friends: [],
-                sidebarOpen: false,
-                activeAdminTab: null,
-                
-                // Chat
-                peer: {},
-                peerIds: [],
-                connections: {},
-                chats: [],
-                selectedChatUser: null,
-                chatMessageInput: "",
-                
-                // User Management
                 selectedUser: null,
-                timeoutModalOpen: false,
-                timeoutMinutes: 30,
+                messages: [],
+                newMessage: "",
                 
-                // Rank Management
-                roles: JSON.parse(localStorage.getItem("roles")) || Array(13).fill().map((_, i) => ({
-                    name: ["Yeni Üye", "Üye", "Kıdemli Üye", "Uzman", "Kıdemli Uzman", "Çavuş", "Kıdemli Çavuş", 
-                           "Astsubay", "Kıdemli Astsubay", "Subay", "Kıdemli Subay", "Komutan", "Mareşal"][i],
-                    color: ["#9e9e9e", "#4caf50", "#2196f3", "#673ab7", "#ff9800", "#ff5722", 
-                            "#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#00bcd4", "#009688", "#ffc107"][i],
-                    icon: localStorage.getItem(`rankIcon${i}`) || defaultRankIcons[i],
-                    messageReq: [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 7800][i]
-                })),
-                
-                // Image Preview
-                imagePreviewModalOpen: false,
-                previewImage: "",
-                
-                // User Restrictions
-                restrictionMessage: ""
+                // PeerJS
+                peer: null,
+                connections: {},
+                peerIds: []
             },
             computed: {
-                nonFriendUsers() {
-                    return this.allUsers.filter(user => 
-                        user.username !== this.currentUser.username && 
-                        !this.friends.some(f => f.username === user.username)
-                    );
-                },
                 filteredMessages() {
-                    if (!this.selectedChatUser) return [];
+                    if (!this.selectedUser) return [];
                     
-                    const targetUsername = this.selectedChatUser.username;
-                    return this.chats.filter(chat => 
-                        (chat.sender === this.currentUser.username && chat.receiver === targetUsername) ||
-                        (chat.sender === targetUsername && chat.receiver === this.currentUser.username)
+                    return this.messages.filter(msg => 
+                        (msg.sender === this.currentUser.username && msg.receiver === this.selectedUser.username) ||
+                        (msg.sender === this.selectedUser.username && msg.receiver === this.currentUser.username)
                     );
-                },
-                isUserRestricted() {
-                    if (this.currentUser.banned) {
-                        this.restrictionMessage = "HESABINIZ BANLANMIŞTIR!";
-                        return true;
-                    }
-                    if (this.currentUser.timeout && new Date(this.currentUser.timeout) > new Date()) {
-                        const diff = Math.floor((new Date(this.currentUser.timeout) - new Date()) / 1000 / 60);
-                        this.restrictionMessage = `ZAMAN AŞIMI: ${diff} dakika kaldı`;
-                        return true;
-                    }
-                    this.restrictionMessage = "";
-                    return false;
-                }
-            },
-            watch: {
-                chats() {
-                    this.$nextTick(() => {
-                        const chatMessages = document.querySelector('.chat-messages');
-                        if (chatMessages) {
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-                    });
                 }
             },
             methods: {
-                // Authentication Methods
-                switchToLogin() {
-                    this.screen = "login";
-                    this.errorMessage = "";
-                },
-                switchToRegister() {
-                    this.screen = "register";
-                    this.errorMessage = "";
-                },
-                loadUsers() {
-                    const users = localStorage.getItem("users");
-                    this.allUsers = users ? JSON.parse(users) : [];
+                // Giriş işlemleri
+                login() {
+                    if (!this.username || !this.password) {
+                        this.error = "Kullanıcı adı ve şifre gereklidir";
+                        return;
+                    }
                     
-                    // Add admin user if not exists
-                    if (!this.allUsers.some(u => u.username === "admin")) {
-                        this.allUsers.push({
+                    // Admin giriş kontrolü
+                    if (this.username === "admin" && this.password === ADMIN_PASSWORD) {
+                        this.initUser({
                             username: "admin",
                             password: ADMIN_PASSWORD,
-                            avatar: "https://i.imgur.com/JzT9Z7n.png",
-                            role: 12, // Mareşal
-                            banned: false,
-                            timeout: null,
-                            sessionId: null,
-                            messageCount: 0,
-                            friends: []
+                            role: 12 // Mareşal
                         });
-                        this.saveUsers();
+                        return;
                     }
                     
-                    // Load friends for current user
-                    if (this.currentUser) {
-                        this.loadFriends();
+                    // Kullanıcı kontrolü
+                    const users = JSON.parse(localStorage.getItem("users") || "[]");
+                    const user = users.find(u => u.username === this.username && u.password === this.password);
+                    
+                    if (user) {
+                        this.initUser(user);
+                    } else {
+                        this.error = "Geçersiz kullanıcı adı veya şifre";
                     }
                 },
-                saveUsers() {
-                    localStorage.setItem("users", JSON.stringify(this.allUsers));
-                },
-                loadFriends() {
-                    if (!this.currentUser) return;
-                    
-                    this.friends = this.allUsers
-                        .filter(user => 
-                            user.username !== this.currentUser.username && 
-                            this.currentUser.friends.includes(user.username)
-                        )
-                        .map(friend => ({
-                            ...friend,
-                            online: this.isUserOnline(friend.username)
-                        }));
-                },
-                submitRegister() {
-                    if (this.registerPassword !== this.registerPasswordConfirm) {
-                        this.errorMessage = "Şifreler eşleşmiyor";
-                        return;
-                    }
-                    
-                    if (this.registerUsername.length < 3) {
-                        this.errorMessage = "Kullanıcı adı en az 3 karakter olmalıdır";
-                        return;
-                    }
-                    
-                    if (this.registerPassword.length < 6) {
-                        this.errorMessage = "Şifre en az 6 karakter olmalıdır";
-                        return;
-                    }
-                    
-                    if (this.allUsers.some(u => u.username === this.registerUsername)) {
-                        this.errorMessage = "Bu kullanıcı adı zaten alınmış";
-                        return;
-                    }
-                    
-                    // Create new user
-                    const newUser = {
-                        username: this.registerUsername,
-                        password: this.registerPassword,
-                        avatar: this.selectedAvatar,
-                        role: 0, // Yeni Üye
-                        banned: false,
-                        timeout: null,
+                
+                initUser(user) {
+                    this.currentUser = {
+                        ...user,
                         sessionId: this.generateSessionId(),
-                        messageCount: 0,
-                        friends: []
+                        messageCount: user.messageCount || 0
                     };
                     
-                    this.allUsers.push(newUser);
-                    this.saveUsers();
+                    // Kullanıcıyı güncelle veya ekle
+                    const users = JSON.parse(localStorage.getItem("users") || "[]");
+                    const existingUserIndex = users.findIndex(u => u.username === user.username);
                     
-                    // Login immediately
-                    this.currentUser = newUser;
-                    localStorage.setItem("lastUser", JSON.stringify({
-                        username: this.registerUsername,
-                        password: this.registerPassword,
-                        rememberMe: true
-                    }));
+                    if (existingUserIndex >= 0) {
+                        users[existingUserIndex] = this.currentUser;
+                    } else {
+                        users.push(this.currentUser);
+                    }
                     
-                    this.startChat();
+                    localStorage.setItem("users", JSON.stringify(users));
+                    this.loadUsers();
+                    this.screen = "chat";
+                    this.initPeer();
                 },
-                submitLogin() {
-                    this.loading = true;
-                    this.errorMessage = "";
+                
+                // Kullanıcı yönetimi
+                loadUsers() {
+                    const users = JSON.parse(localStorage.getItem("users") || "[]");
                     
-                    // Admin login check
-                    if (this.loginUsername === "admin" && this.loginPassword === ADMIN_PASSWORD) {
-                        const adminUser = this.allUsers.find(u => u.username === "admin");
-                        adminUser.sessionId = this.generateSessionId();
-                        this.currentUser = adminUser;
-                        this.saveUsers();
-                        
-                        localStorage.setItem("lastUser", JSON.stringify({
+                    // Admin kullanıcısını ekle (eğer yoksa)
+                    if (!users.some(u => u.username === "admin")) {
+                        users.push({
                             username: "admin",
                             password: ADMIN_PASSWORD,
-                            rememberMe: true
-                        }));
-                        
-                        this.startChat();
-                        return;
+                            role: 12 // Mareşal
+                        });
+                        localStorage.setItem("users", JSON.stringify(users));
                     }
                     
-                    // Normal user login
-                    const user = this.allUsers.find(u => 
-                        u.username === this.loginUsername && 
-                        u.password === this.loginPassword
-                    );
-                    
-                    if (!user) {
-                        this.loading = false;
-                        this.errorMessage = "Geçersiz kullanıcı adı veya şifre";
-                        return;
-                    }
-                    
-                    if (user.banned) {
-                        this.loading = false;
-                        this.errorMessage = "Bu hesap banlanmıştır";
-                        return;
-                    }
-                    
-                    if (user.timeout && new Date(user.timeout) > new Date()) {
-                        this.loading = false;
-                        const diff = Math.floor((new Date(user.timeout) - new Date()) / 1000 / 60);
-                        this.errorMessage = `Bu hesap ${diff} dakika daha zaman aşımına uğramış`;
-                        return;
-                    }
-                    
-                    user.sessionId = this.generateSessionId();
-                    this.currentUser = user;
-                    this.updateUser(user);
-                    
-                    localStorage.setItem("lastUser", JSON.stringify({
-                        username: this.loginUsername,
-                        password: this.loginPassword,
-                        rememberMe: true
-                    }));
-                    
-                    this.startChat();
-                },
-                logout() {
-                    this.peer.disconnect();
-                    this.currentUser = null;
-                    this.screen = "login";
-                    this.chats = [];
-                    localStorage.removeItem("chats");
-                },
-                generateSessionId() {
-                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                        return v.toString(16);
-                    });
+                    this.allUsers = users.filter(u => u.username !== this.currentUser.username);
                 },
                 
-                // Chat Methods
-                startChat() {
-                    this.screen = "chat";
-                    this.loading = false;
-                    this.chats = [];
-                    this.loadFriends();
-                    this.createPeer();
-                },
-                getPeerId(username) {
-                    return appPrefix + username;
-                },
-                getUsername(peerId) {
-                    return peerId ? peerId.slice(appPrefix.length) : "";
-                },
-                getRole(roleIndex) {
-                    return this.roles[roleIndex] || this.roles[0];
-                },
-                getRoleName(roleIndex) {
-                    return this.getRole(roleIndex).name;
-                },
-                getRoleColor(roleIndex) {
-                    return this.getRole(roleIndex).color;
-                },
-                getRoleIcon(roleIndex) {
-                    return this.getRole(roleIndex).icon;
-                },
-                getSenderRole(sender) {
-                    if (sender === this.currentUser.username) return this.currentUser.role;
-                    
-                    // Search in connected users
-                    for (const peerId in this.connections) {
-                        if (this.getUsername(peerId) === sender) {
-                            return this.connections[peerId].metadata.role;
-                        }
-                    }
-                    
-                    // Search in all users
-                    const user = this.allUsers.find(u => u.username === sender);
-                    return user ? user.role : 0;
-                },
-                getUserRole(peerId) {
-                    const username = this.getUsername(peerId);
-                    const user = this.allUsers.find(u => u.username === username);
-                    return user ? user.role : 0;
-                },
                 isUserOnline(username) {
-                    return this.peerIds.includes(this.getPeerId(username)) || 
-                           (this.currentUser && this.currentUser.username === username);
-                },
-                formatFileSize(bytes) {
-                    if (bytes === 0) return '0 Bytes';
-                    const k = 1024;
-                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                },
-                formatTimeout(timeout) {
-                    const diff = Math.floor((new Date(timeout) - new Date()) / 1000 / 60);
-                    return `${diff} dakika`;
-                },
-                formatTime(timestamp) {
-                    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                },
-                shouldShowSender(message, index) {
-                    if (index === 0) return true;
-                    const prevMessage = this.filteredMessages[index - 1];
-                    return prevMessage.sender !== message.sender;
+                    return this.peerIds.includes(this.getPeerId(username));
                 },
                 
-                // Friend Methods
-                addFriend(user) {
-                    if (!this.currentUser.friends.includes(user.username)) {
-                        this.currentUser.friends.push(user.username);
-                        this.updateUser(this.currentUser);
-                        this.loadFriends();
-                        
-                        // Send friend request to the other user if online
-                        const peerId = this.getPeerId(user.username);
-                        if (this.connections[peerId]) {
-                            this.connections[peerId].send({
-                                type: "friendRequest",
-                                from: this.currentUser.username
-                            });
-                        }
-                    }
-                },
-                
-                // PeerJS Methods
-                addConnection(conn) {
-                    this.connections[conn.peer] = conn;
-                    this.updatePeerIds();
-                    console.log(`Connected to ${conn.peer}!`);
-                    
-                    // Update friends list when a new connection is established
-                    this.loadFriends();
-                },
-                removeConnection(conn) {
-                    delete this.connections[conn.peer];
-                    this.updatePeerIds();
-                    
-                    // Update friends list when a connection is lost
-                    this.loadFriends();
-                },
-                updatePeerIds() {
-                    this.peerIds = Object.keys(this.connections);
-                },
-                disconnectPeer() {
-                    this.peer.disconnect();
-                },
-                configureConnection(conn) {
-                    conn.on("data", data => {
-                        if (data.type === "connections") {
-                            data.peerIds.forEach(peerId => {
-                                if (!this.connections[peerId]) {
-                                    this.initiateConnection(peerId);
-                                }
-                            });
-                        } else if (data.type === "chat") {
-                            this.receiveChat(data.chat);
-                        } else if (data.type === "userUpdate") {
-                            // Update user data
-                            const user = data.user;
-                            const existingUser = this.allUsers.find(u => u.username === user.username);
-                            if (existingUser) {
-                                Object.assign(existingUser, user);
-                                this.saveUsers();
-                                this.loadFriends();
-                            }
-                        } else if (data.type === "friendRequest") {
-                            if (confirm(`${data.from} sizi arkadaş olarak eklemek istiyor. Kabul ediyor musunuz?`)) {
-                                if (!this.currentUser.friends.includes(data.from)) {
-                                    this.currentUser.friends.push(data.from);
-                                    this.updateUser(this.currentUser);
-                                    this.loadFriends();
-                                }
-                            }
-                        } else if (data.type === "rankUpdate") {
-                            // Update rank icon
-                            this.roles[data.roleIndex].icon = data.icon;
-                            this.saveRoles();
-                        }
-                    });
-                    conn.on("close", () => this.removeConnection(conn));
-                    conn.on("error", () => this.removeConnection(conn));
-
-                    if (conn.metadata?.peerIds) {
-                        conn.metadata.peerIds.forEach(peerId => {
-                            if (!this.connections[peerId]) {
-                                this.initiateConnection(peerId);
-                            }
-                        });
-                    }
-                },
-                initiateConnection(peerId) {
-                    if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
-                        this.loading = true;
-                        
-                        const options = {
-                            metadata: {
-                                peerIds: this.peerIds,
-                                username: this.currentUser.username,
-                                role: this.currentUser.role,
-                                avatar: this.currentUser.avatar
-                            },
-                            serialization: "json"
-                        };
-                        const conn = this.peer.connect(peerId, options);
-                        this.configureConnection(conn);
-
-                        conn.on("open", () => {
-                            this.addConnection(conn);
-                            this.loading = false;
-                            
-                            // Send user data to the new connection
-                            conn.send({
-                                type: "userUpdate",
-                                user: this.currentUser
-                            });
-
-                            conn.send({
-                                type: "connections",
-                                peerIds: this.peerIds
-                            });
-                        });
-                    }
-                },
-                createPeer() {
-                    this.peer = new Peer(this.getPeerId(this.currentUser.username), PEERJS_CONFIG);
-
-                    this.peer.on("open", () => {
-                        this.loading = false;
-                        
-                        // Connect to friends automatically
-                        this.currentUser.friends.forEach(friend => {
-                            this.initiateConnection(this.getPeerId(friend));
-                        });
-                    });
-
-                    this.peer.on("error", error => {
-                        this.loading = false;
-                        if (error.type === "peer-unavailable") {
-                            alert(`${this.targetIdInput} ulaşılamıyor!`);
-                        } else if (error.type === "unavailable-id") {
-                            alert(`${this.currentUser.username} zaten alınmış!`);
-                        } else {
-                            console.error("PeerJS error:", error);
-                        }
-                    });
-
-                    this.peer.on('connection', conn => {
-                        if (!this.peerIds.includes(conn.peer)) {
-                            this.configureConnection(conn);
-
-                            conn.on("open", () => {
-                                this.addConnection(conn);
-
-                                // Send user data to the new connection
-                                conn.send({
-                                    type: "userUpdate",
-                                    user: this.currentUser
-                                });
-
-                                conn.send({
-                                    type: "connections",
-                                    peerIds: this.peerIds
-                                });
-                            });
-                        }
-                    });
-                },
+                // Mesaj işlemleri
                 selectUser(user) {
-                    this.selectedChatUser = user;
-                    this.activeAdminTab = null;
+                    this.selectedUser = user;
                 },
+                
                 sendMessage() {
-                    if (this.chatMessageInput.trim() === "" || !this.selectedChatUser || this.isUserRestricted) return;
-
-                    const chat = {
-                        type: "text",
-                        sender: this.currentUser.username,
-                        receiver: this.selectedChatUser.username,
-                        message: this.chatMessageInput,
-                        timestamp: new Date().getTime(),
-                        sessionId: this.currentUser.sessionId
-                    };
-
-                    this.chats.push(chat);
+                    if (!this.newMessage.trim() || !this.selectedUser) return;
                     
-                    // Send to the selected user if connected
-                    const peerId = this.getPeerId(this.selectedChatUser.username);
+                    const message = {
+                        sender: this.currentUser.username,
+                        receiver: this.selectedUser.username,
+                        text: this.newMessage,
+                        timestamp: Date.now()
+                    };
+                    
+                    this.messages.push(message);
+                    
+                    // Diğer kullanıcıya gönder
+                    const peerId = this.getPeerId(this.selectedUser.username);
                     if (this.connections[peerId]) {
                         this.connections[peerId].send({
-                            type: "chat",
-                            chat
+                            type: "message",
+                            message
                         });
                     }
-
-                    // Update message count
+                    
+                    // Mesaj sayısını güncelle
                     this.currentUser.messageCount++;
                     this.updateUser(this.currentUser);
                     
-                    // Check for rank promotion
-                    this.checkRankPromotion();
-
-                    this.chatMessageInput = "";
+                    // Rol kontrolü
+                    this.checkRank();
+                    
+                    this.newMessage = "";
                 },
-                receiveChat(chat) {
-                    this.chats.push(chat);
+                
+                receiveMessage(message) {
+                    this.messages.push(message);
                 },
-                checkRankPromotion() {
-                    for (let i = this.roles.length - 1; i >= 0; i--) {
-                        if (this.currentUser.messageCount >= this.roles[i].messageReq && this.currentUser.role < i) {
+                
+                // Rol yönetimi
+                getRole(roleIndex) {
+                    return roles[roleIndex] || roles[0];
+                },
+                
+                checkRank() {
+                    for (let i = roles.length - 1; i >= 0; i--) {
+                        if (this.currentUser.messageCount >= roles[i].messageReq && this.currentUser.role < i) {
                             this.currentUser.role = i;
                             this.updateUser(this.currentUser);
                             
-                            // Notify all connections about the rank change
+                            // Tüm bağlantılara yeni rol bilgisini gönder
                             Object.values(this.connections).forEach(conn => {
                                 conn.send({
                                     type: "userUpdate",
@@ -1822,195 +424,124 @@
                         }
                     }
                 },
+                
                 updateUser(user) {
-                    const index = this.allUsers.findIndex(u => u.username === user.username);
-                    if (index !== -1) {
-                        this.allUsers[index] = user;
-                        this.saveUsers();
+                    const users = JSON.parse(localStorage.getItem("users") || "[]");
+                    const index = users.findIndex(u => u.username === user.username);
+                    
+                    if (index >= 0) {
+                        users[index] = user;
+                        localStorage.setItem("users", JSON.stringify(users));
                     }
                 },
                 
-                // File Handling
-                openFileInput(type) {
-                    if (this.isUserRestricted) return;
+                // PeerJS işlemleri
+                initPeer() {
+                    this.peer = new Peer(this.getPeerId(this.currentUser.username), PEERJS_CONFIG);
                     
-                    if (type === 'image') {
-                        document.getElementById('imageInput').click();
-                    } else {
-                        document.getElementById('fileInput').click();
-                    }
-                },
-                handleImageUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    if (!file.type.match('image.*')) {
-                        alert("Lütfen bir resim dosyası seçin");
-                        return;
-                    }
-
-                    if (file.size > MAX_FILE_SIZE) {
-                        alert("Resim boyutu 50MB'tan büyük olamaz");
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const chat = {
-                            type: "image",
-                            sender: this.currentUser.username,
-                            receiver: this.selectedChatUser.username,
-                            content: e.target.result,
-                            timestamp: new Date().getTime(),
-                            sessionId: this.currentUser.sessionId
-                        };
-
-                        this.chats.push(chat);
-                        
-                        // Send to the selected user if connected
-                        const peerId = this.getPeerId(this.selectedChatUser.username);
-                        if (this.connections[peerId]) {
-                            this.connections[peerId].send({
-                                type: "chat",
-                                chat
-                            });
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                },
-                handleFileUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    if (file.size > MAX_FILE_SIZE) {
-                        alert("Dosya boyutu 50MB'tan büyük olamaz");
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const chat = {
-                            type: "file",
-                            sender: this.currentUser.username,
-                            receiver: this.selectedChatUser.username,
-                            content: e.target.result,
-                            filename: file.name,
-                            size: file.size,
-                            timestamp: new Date().getTime(),
-                            sessionId: this.currentUser.sessionId
-                        };
-
-                        this.chats.push(chat);
-                        
-                        // Send to the selected user if connected
-                        const peerId = this.getPeerId(this.selectedChatUser.username);
-                        if (this.connections[peerId]) {
-                            this.connections[peerId].send({
-                                type: "chat",
-                                chat
-                            });
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                },
-                openImageModal(imageSrc) {
-                    this.previewImage = imageSrc;
-                    this.imagePreviewModalOpen = true;
-                },
-                
-                // Admin Methods
-                updateUserRole(user) {
-                    this.updateUser(user);
-                    
-                    // Notify all connections about the user update
-                    Object.values(this.connections).forEach(conn => {
-                        conn.send({
-                            type: "userUpdate",
-                            user
-                        });
-                    });
-                },
-                toggleBan(user) {
-                    user.banned = !user.banned;
-                    if (user.banned) {
-                        user.timeout = null;
-                    }
-                    this.updateUser(user);
-                    
-                    // Notify all connections about the user update
-                    Object.values(this.connections).forEach(conn => {
-                        conn.send({
-                            type: "userUpdate",
-                            user
-                        });
-                    });
-                },
-                openTimeoutModal(user) {
-                    this.selectedUser = user;
-                    this.timeoutMinutes = 30;
-                    this.timeoutModalOpen = true;
-                },
-                applyTimeout() {
-                    if (!this.selectedUser) return;
-                    
-                    const timeoutDate = new Date();
-                    timeoutDate.setMinutes(timeoutDate.getMinutes() + parseInt(this.timeoutMinutes));
-                    this.selectedUser.timeout = timeoutDate.toISOString();
-                    this.selectedUser.banned = false;
-                    this.updateUser(this.selectedUser);
-                    
-                    // Notify all connections about the user update
-                    Object.values(this.connections).forEach(conn => {
-                        conn.send({
-                            type: "userUpdate",
-                            user: this.selectedUser
-                        });
+                    this.peer.on("open", () => {
+                        console.log("PeerJS bağlantısı kuruldu");
                     });
                     
-                    this.timeoutModalOpen = false;
-                },
-                handleRankIconUpload(event, roleIndex) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    if (!file.type.match('image.*')) {
-                        alert("Lütfen bir resim dosyası seçin");
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.roles[roleIndex].icon = e.target.result;
-                        localStorage.setItem(`rankIcon${roleIndex}`, e.target.result);
+                    this.peer.on("connection", (conn) => {
+                        this.setupConnection(conn);
                         
-                        // Notify all connections about the rank update
-                        Object.values(this.connections).forEach(conn => {
+                        conn.on("open", () => {
+                            this.addConnection(conn);
+                            
+                            // Kullanıcı bilgilerini gönder
                             conn.send({
-                                type: "rankUpdate",
-                                roleIndex,
-                                icon: e.target.result
+                                type: "userUpdate",
+                                user: this.currentUser
                             });
                         });
-                    };
-                    reader.readAsDataURL(file);
+                    });
+                    
+                    this.peer.on("error", (err) => {
+                        console.error("PeerJS hatası:", err);
+                    });
                 },
-                saveRoles() {
-                    localStorage.setItem("roles", JSON.stringify(this.roles));
+                
+                connectToUser(username) {
+                    const peerId = this.getPeerId(username);
+                    
+                    if (!this.connections[peerId] && peerId !== this.peer.id) {
+                        const conn = this.peer.connect(peerId);
+                        this.setupConnection(conn);
+                        
+                        conn.on("open", () => {
+                            this.addConnection(conn);
+                        });
+                    }
+                },
+                
+                setupConnection(conn) {
+                    conn.on("data", (data) => {
+                        if (data.type === "message") {
+                            this.receiveMessage(data.message);
+                        } else if (data.type === "userUpdate") {
+                            // Kullanıcı bilgisi güncellendi
+                            const users = JSON.parse(localStorage.getItem("users") || "[]");
+                            const index = users.findIndex(u => u.username === data.user.username);
+                            
+                            if (index >= 0) {
+                                users[index] = data.user;
+                                localStorage.setItem("users", JSON.stringify(users));
+                                this.loadUsers();
+                            }
+                        }
+                    });
+                    
+                    conn.on("close", () => {
+                        this.removeConnection(conn);
+                    });
+                    
+                    conn.on("error", (err) => {
+                        console.error("Bağlantı hatası:", err);
+                        this.removeConnection(conn);
+                    });
+                },
+                
+                addConnection(conn) {
+                    this.connections[conn.peer] = conn;
+                    this.updatePeerIds();
+                },
+                
+                removeConnection(conn) {
+                    delete this.connections[conn.peer];
+                    this.updatePeerIds();
+                },
+                
+                updatePeerIds() {
+                    this.peerIds = Object.keys(this.connections);
+                },
+                
+                getPeerId(username) {
+                    return appPrefix + username;
+                },
+                
+                // Yardımcı fonksiyonlar
+                generateSessionId() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                },
+                
+                formatTime(timestamp) {
+                    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
             },
             mounted() {
-                // Initialize modals
-                this.loadUsers();
-                
-                // Auto-login if remembered
-                const lastUser = localStorage.getItem("lastUser");
-                if (lastUser) {
-                    const user = JSON.parse(lastUser);
-                    if (user.rememberMe) {
-                        this.loginUsername = user.username;
-                        this.loginPassword = user.password;
-                        this.submitLogin();
-                    }
+                // Sayfa yüklendiğinde admin kullanıcısını ekle (eğer yoksa)
+                const users = JSON.parse(localStorage.getItem("users") || "[]");
+                if (!users.some(u => u.username === "admin")) {
+                    users.push({
+                        username: "admin",
+                        password: ADMIN_PASSWORD,
+                        role: 12 // Mareşal
+                    });
+                    localStorage.setItem("users", JSON.stringify(users));
                 }
             }
         });
