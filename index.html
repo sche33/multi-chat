@@ -1,1323 +1,1027 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteChat | Premium P2P Mesajlaşma</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #3f37c9;
-            --accent: #4895ef;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --info: #560bad;
-        }
+    <title>Serverless, secure & persistent multichat</title>
 
-        * {
+    <!-- To efficiently implement sockets -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- To easily manage dynamic rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+
+    <!-- Integrate font styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
+
+    <!-- Material Design stylesheets -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <style>
+        body {
+            font-family: "Red Hat Display";
+            background-color: #f5f5f5;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f5f7fa;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-
-        .app-container {
+        .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo i {
-            font-size: 1.8rem;
-        }
-
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: var(--success);
-        }
-
-        .status.disconnected .status-indicator {
-            background-color: var(--danger);
-        }
-
-        .main-content {
-            display: flex;
-            flex: 1;
+        #chatbox {
+            height: 400px;
+            overflow-y: auto;
             background-color: white;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 300px;
-            border-right: 1px solid #e9ecef;
-            background-color: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-profile {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .avatar-edit {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            text-align: center;
-            padding: 3px 0;
-            font-size: 0.8rem;
-            transform: translateY(100%);
-            transition: transform 0.2s;
-        }
-
-        .avatar:hover .avatar-edit {
-            transform: translateY(0);
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .username {
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-
-        .user-status {
-            font-size: 0.8rem;
-            color: var(--gray);
-        }
-
-        .connect-form {
+            border-radius: 8px;
             padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .form-group {
             margin-bottom: 15px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-family: inherit;
-            transition: border-color 0.2s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-family: inherit;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #e5177b;
-        }
-
-        .user-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px 0;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-left: 3px solid transparent;
-        }
-
-        .user-item:hover {
-            background-color: rgba(67, 97, 238, 0.05);
-        }
-
-        .user-item.active {
-            background-color: rgba(67, 97, 238, 0.1);
-            border-left-color: var(--primary);
-        }
-
-        .user-item-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 12px;
-        }
-
-        .user-item-info {
-            flex: 1;
-        }
-
-        .user-item-name {
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .user-item-status {
-            font-size: 0.75rem;
-            color: var(--gray);
-        }
-
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .chat-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: #f5f7fa;
-            background-image: radial-gradient(#e9ecef 1px, transparent 1px);
-            background-size: 20px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .message {
-            display: flex;
-            margin-bottom: 15px;
-            max-width: 80%;
-        }
-
-        .message-incoming {
-            align-self: flex-start;
-        }
-
-        .message-outgoing {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 10px;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
             border-radius: 18px;
-            position: relative;
+            max-width: 70%;
             word-wrap: break-word;
-            line-height: 1.4;
         }
 
-        .message-incoming .message-bubble {
-            background-color: white;
-            color: var(--dark);
-            border-top-left-radius: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        .message.sent {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
         }
 
-        .message-outgoing .message-bubble {
-            background-color: var(--primary);
-            color: white;
-            border-top-right-radius: 0;
+        .message.received {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
         }
 
-        .message-time {
-            font-size: 0.7rem;
-            color: var(--gray);
-            margin-top: 4px;
-            text-align: right;
+        .message-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
         }
 
-        .message-incoming .message-time {
-            text-align: left;
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
         }
 
         .file-message {
             display: flex;
             align-items: center;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.7);
+            padding: 8px;
+            background-color: #e8f5e9;
             border-radius: 8px;
             margin-top: 5px;
-            text-decoration: none;
-            color: var(--dark);
-            transition: background-color 0.2s;
-        }
-
-        .message-outgoing .file-message {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .file-message:hover {
-            background-color: rgba(255, 255, 255, 0.9);
-        }
-
-        .message-outgoing .file-message:hover {
-            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .file-icon {
-            margin-right: 10px;
-            font-size: 1.2rem;
+            margin-right: 8px;
+            color: #2e7d32;
         }
 
-        .file-info {
-            flex: 1;
-        }
-
-        .file-name {
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .file-size {
-            font-size: 0.7rem;
-            color: var(--gray);
-        }
-
-        .message-outgoing .file-size {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .image-message {
-            max-width: 100%;
-            max-height: 300px;
+        .media-preview {
+            max-width: 200px;
+            max-height: 200px;
             border-radius: 8px;
             margin-top: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            transition: transform 0.2s;
         }
 
-        .image-message:hover {
-            transform: scale(1.02);
+        .media-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .media-fullscreen img, .media-fullscreen video {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .profile-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .user-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .user-item.active {
+            background-color: #e3f2fd;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+
+        .status-online {
+            background-color: #4caf50;
+        }
+
+        .status-offline {
+            background-color: #f44336;
+        }
+
+        .chat-input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
         }
 
         .chat-input {
-            padding: 15px;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background-color: white;
+            flex-grow: 1;
+            margin-right: 10px;
         }
 
-        .message-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 1px solid #ced4da;
-            border-radius: 24px;
-            font-family: inherit;
-            resize: none;
-            max-height: 120px;
-            transition: border-color 0.2s;
-        }
-
-        .message-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .file-input-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .file-input-btn:hover {
-            background-color: #e9ecef;
-        }
-
-        .send-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border: none;
-        }
-
-        .send-btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .progress-container {
-            width: 100%;
-            padding: 5px 15px;
-            background-color: white;
-        }
-
-        .progress-text {
-            font-size: 0.8rem;
-            margin-bottom: 3px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .progress-bar {
-            height: 4px;
-            background-color: #e9ecef;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: var(--primary);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .login-container {
-            max-width: 400px;
-            margin: 50px auto;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .login-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .login-subtitle {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .login-body {
-            padding: 25px;
-        }
-
-        .login-footer {
-            padding: 15px;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--gray);
-            border-top: 1px solid #e9ecef;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            padding: 40px;
-            text-align: center;
-            color: var(--gray);
-        }
-
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: #ced4da;
-        }
-
-        .empty-state-title {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            margin-top: 5px;
-            margin-left: 46px;
-            font-size: 0.8rem;
-            color: var(--gray);
-        }
-
-        .typing-dots {
-            display: flex;
+        .action-button {
             margin-left: 5px;
         }
 
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--gray);
-            border-radius: 50%;
-            margin: 0 2px;
-            opacity: 0.4;
-            animation: typingAnimation 1.4s infinite ease-in-out;
+        .file-input {
+            display: none;
         }
 
-        .typing-dot:nth-child(1) {
-            animation-delay: 0s;
+        .progress-container {
+            margin-top: 10px;
+            display: none;
         }
 
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingAnimation {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.4;
-            }
-            30% {
-                transform: translateY(-5px);
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid #e9ecef;
-            }
-
-            .message {
-                max-width: 90%;
-            }
+        .typing-indicator {
+            font-size: 0.8em;
+            color: #666;
+            font-style: italic;
+            height: 20px;
         }
     </style>
 </head>
+
 <body>
     <div id="app">
-        <!-- Login Screen -->
-        <div class="login-container" v-if="screen === 'login'">
-            <div class="login-header">
-                <div class="login-title">EliteChat</div>
-                <div class="login-subtitle">Premium P2P Mesajlaşma</div>
-            </div>
-            <div class="login-body">
-                <div class="form-group">
-                    <label for="username">Kullanıcı Adı</label>
-                    <input type="text" id="username" class="form-control" v-model="usernameInput" placeholder="Kullanıcı adınızı girin">
+        <div id="login" v-if="screen === 'login'">
+            <div class="container">
+                <div class="row">
+                    <div class="col s12 m6 offset-m3">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">Enter your details</span>
+                                
+                                <div class="center" @click="triggerProfilePicUpload">
+                                    <img :src="profilePicPreview || 'https://via.placeholder.com/150'" class="profile-pic">
+                                    <input type="file" id="profile-pic-upload" class="file-input" accept="image/*" @change="handleProfilePicChange">
+                                </div>
+                                
+                                <div class="input-field">
+                                    <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
+                                    <label for="username">Username</label>
+                                </div>
+                                
+                                <button v-bind:class="{ disabled: loading }" class="btn waves-effect waves-light blue" type="button" @click="submitLogin">
+                                    Login <i class="material-icons right">login</i>
+                                </button>
+                                
+                                <p v-if="loading" class="center">Connecting...</p>
+                                <p v-if="peerError" class="red-text center">{{ peerError }}</p>
+                            </div>
+                            <div class="card-action">
+                                <p class="center">Crafted with ❤️ by <a href="https://r.milon.pro" target="_blank" rel="noopener noreferrer">Rubilmax</a></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn btn-primary btn-block" @click="submitLogin" :disabled="loading">
-                    <span v-if="!loading">Giriş Yap</span>
-                    <span v-else><i class="fas fa-spinner fa-spin"></i> Bağlanıyor...</span>
-                </button>
-                <p v-if="peerError" style="color: var(--danger); margin-top: 15px; font-size: 0.9rem;">{{ peerError }}</p>
-            </div>
-            <div class="login-footer">
-                <p>End-to-end şifreli güvenli iletişim</p>
             </div>
         </div>
-
-        <!-- Chat Screen -->
-        <div class="app-container" v-if="screen === 'chat'">
-            <header>
-                <div class="logo">
-                    <i class="fas fa-comments"></i>
-                    <span>EliteChat</span>
-                </div>
-                <div class="status" :class="{ disconnected: peer.disconnected }">
-                    <div class="status-indicator"></div>
-                    <span>{{ peer.disconnected ? 'Bağlantı kesildi' : 'Çevrimiçi' }}</span>
-                </div>
-            </header>
-
-            <div class="main-content">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <!-- User Profile -->
-                    <div class="user-profile">
-                        <div class="avatar" @click="triggerProfilePicUpload">
-                            <img :src="profilePictures[usernameInput] || 'https://ui-avatars.com/api/?name=' + usernameInput + '&background=4361ee&color=fff'" alt="Profile">
-                            <div class="avatar-edit">Değiştir</div>
-                            <input type="file" id="profile-pic-input" style="display: none;" accept="image/*" @change="handleProfilePicChange">
-                        </div>
-                        <div class="user-info">
-                            <div class="username">{{ usernameInput }}</div>
-                            <div class="user-status">{{ peer.disconnected ? 'Çevrimdışı' : 'Çevrimiçi' }}</div>
-                        </div>
+        
+        <div id="chat" v-if="screen === 'chat'">
+            <div class="navbar-fixed">
+                <nav class="blue">
+                    <div class="nav-wrapper">
+                        <a href="#" class="brand-logo center">Multichat</a>
+                        <ul class="right">
+                            <li>
+                                <a href="#" @click="disconnectPeer">
+                                    <i class="material-icons">power_settings_new</i>
+                                </a>
+                            </li>
+                        </ul>
                     </div>
-
-                    <!-- Connect Form -->
-                    <div class="connect-form">
-                        <div class="form-group">
-                            <label for="target_id">Kullanıcıya Bağlan</label>
-                            <input type="text" id="target_id" class="form-control" v-model="targetIdInput" placeholder="Kullanıcı adı girin">
-                        </div>
-                        <button class="btn btn-primary btn-block" @click="submitConnection" :disabled="loading || peer.disconnected">
-                            <span v-if="!loading">Bağlan</span>
-                            <span v-else><i class="fas fa-spinner fa-spin"></i></span>
-                        </button>
-                        <button class="btn btn-danger btn-block" style="margin-top: 10px;" @click="disconnectPeer" v-if="!peer.disconnected">
-                            Bağlantıyı Kes
-                        </button>
-                        <button class="btn btn-primary btn-block" style="margin-top: 10px;" @click="reconnectPeer" v-else>
-                            Yeniden Bağlan
-                        </button>
-                        <p v-if="peerError" style="color: var(--danger); margin-top: 10px; font-size: 0.8rem; text-align: center;">{{ peerError }}</p>
-                    </div>
-
-                    <!-- User List -->
-                    <div class="user-list">
-                        <div class="user-item" v-for="peerId in peerIds" :key="peerId" 
-                             :class="{ active: activePeer === peerId }" @click="setActivePeer(peerId)">
-                            <img class="user-item-avatar" :src="profilePictures[getUsername(peerId)] || 'https://ui-avatars.com/api/?name=' + getUsername(peerId) + '&background=3f37c9&color=fff'" alt="User">
-                            <div class="user-item-info">
-                                <div class="user-item-name">{{ getUsername(peerId) }}</div>
-                                <div class="user-item-status">Çevrimiçi</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chat Area -->
-                <div class="chat-container">
-                    <div class="chat-header" v-if="activePeer">
-                        <img class="user-item-avatar" :src="profilePictures[getUsername(activePeer)] || 'https://ui-avatars.com/api/?name=' + getUsername(activePeer) + '&background=3f37c9&color=fff'" alt="User">
-                        <div class="chat-title">{{ getUsername(activePeer) }}</div>
-                    </div>
-                    <div class="chat-header" v-else>
-                        <div class="chat-title">Genel Sohbet</div>
-                    </div>
-
-                    <div class="chat-messages" ref="chatMessages">
-                        <!-- Empty State -->
-                        <div class="empty-state" v-if="!activePeer && generalChats.length === 0">
-                            <div class="empty-state-icon">
-                                <i class="fas fa-comment-dots"></i>
-                            </div>
-                            <div class="empty-state-title">Genel Sohbete Hoş Geldiniz</div>
-                            <p>Burada herkesin görebileceği mesajlar paylaşabilirsiniz.</p>
-                        </div>
-
-                        <!-- General Chat Messages -->
-                        <template v-if="!activePeer">
-                            <div class="message" v-for="(chat, index) in generalChats" :key="'general-' + index" 
-                                 :class="chat.sender === usernameInput ? 'message-outgoing' : 'message-incoming'">
-                                <img class="message-avatar" :src="profilePictures[chat.sender] || 'https://ui-avatars.com/api/?name=' + chat.sender + '&background=3f37c9&color=fff'" alt="User">
-                                <div class="message-content">
-                                    <div class="message-bubble">
-                                        <template v-if="chat.type === 'text'">
-                                            {{ chat.message }}
-                                        </template>
-                                        <template v-else-if="chat.type === 'file'">
-                                            <a :href="chat.fileUrl" class="file-message" target="_blank" download>
-                                                <i class="fas fa-file-alt file-icon"></i>
-                                                <div class="file-info">
-                                                    <div class="file-name">{{ chat.fileName }}</div>
-                                                    <div class="file-size">{{ formatFileSize(chat.fileSize) }}</div>
-                                                </div>
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                        </template>
-                                        <template v-else-if="chat.type === 'image'">
-                                            <img :src="chat.fileUrl" class="image-message" :alt="chat.fileName">
-                                        </template>
-                                    </div>
-                                    <div class="message-time">{{ formatTimestamp(chat.timestamp) }}</div>
+                </nav>
+            </div>
+            
+            <div class="container">
+                <div class="row">
+                    <!-- User list column -->
+                    <div class="col s12 m4">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">Users</span>
+                                
+                                <div class="user-item active">
+                                    <img :src="getProfilePic(usernameInput)" class="user-avatar">
+                                    <span>{{ usernameInput }} (You)</span>
+                                    <span class="status-indicator status-online"></span>
+                                </div>
+                                
+                                <div v-for="peerId in peerIds" class="user-item" @click="setActiveChat(peerId)" :class="{ active: activeChat === peerId }">
+                                    <img :src="getProfilePic(getUsername(peerId))" class="user-avatar">
+                                    <span>{{ getUsername(peerId) }}</span>
+                                    <span class="status-indicator" :class="isUserOnline(peerId) ? 'status-online' : 'status-offline'"></span>
+                                </div>
+                                
+                                <div v-if="peerIds.length === 0" class="center grey-text">
+                                    No other users connected
                                 </div>
                             </div>
-                        </template>
-
-                        <!-- Private Chat Messages -->
-                        <template v-else>
-                            <div class="message" v-for="(chat, index) in privateChats[activePeer] || []" :key="'private-' + index" 
-                                 :class="chat.sender === usernameInput ? 'message-outgoing' : 'message-incoming'">
-                                <img class="message-avatar" :src="profilePictures[chat.sender] || 'https://ui-avatars.com/api/?name=' + chat.sender + '&background=3f37c9&color=fff'" alt="User">
-                                <div class="message-content">
-                                    <div class="message-bubble">
-                                        <template v-if="chat.type === 'text'">
-                                            {{ chat.message }}
-                                        </template>
-                                        <template v-else-if="chat.type === 'file'">
-                                            <a :href="chat.fileUrl" class="file-message" target="_blank" download>
-                                                <i class="fas fa-file-alt file-icon"></i>
-                                                <div class="file-info">
-                                                    <div class="file-name">{{ chat.fileName }}</div>
-                                                    <div class="file-size">{{ formatFileSize(chat.fileSize) }}</div>
-                                                </div>
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                        </template>
-                                        <template v-else-if="chat.type === 'image'">
-                                            <img :src="chat.fileUrl" class="image-message" :alt="chat.fileName">
-                                        </template>
+                            
+                            <div class="card-action">
+                                <form @submit.prevent="submitConnection">
+                                    <div class="input-field">
+                                        <input id="target_id" type="text" v-model="targetIdInput" :disabled="peer.disconnected" />
+                                        <label for="target_id">Connect to username</label>
                                     </div>
-                                    <div class="message-time">{{ formatTimestamp(chat.timestamp) }}</div>
+                                    <button class="btn waves-effect waves-light blue" type="submit" :disabled="peer.disconnected">
+                                        Connect <i class="material-icons right">person_add</i>
+                                    </button>
+                                </form>
+                                
+                                <p v-if="peerError" class="red-text center">{{ peerError }}</p>
+                                
+                                <div v-if="peer.disconnected" class="red lighten-4 red-text text-darken-4 padding-10">
+                                    <i class="material-icons left">warning</i>
+                                    You are disconnected! Can't connect to new users.
                                 </div>
                             </div>
-                        </template>
-                    </div>
-
-                    <!-- Chat Input -->
-                    <div class="chat-input">
-                        <label class="file-input-btn" title="Dosya Ekle">
-                            <i class="fas fa-paperclip"></i>
-                            <input type="file" id="file-upload" style="display: none;" @change="handleFileUpload">
-                        </label>
-                        <textarea class="message-input" v-model="messageInput" placeholder="Mesaj yazın..." 
-                                  @keydown.enter.exact.prevent="sendMessage"></textarea>
-                        <button class="send-btn" @click="sendMessage" :disabled="!messageInput && !currentFile">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-
-                    <!-- Upload Progress -->
-                    <div class="progress-container" v-if="uploadProgress > 0 && uploadProgress < 100">
-                        <div class="progress-text">
-                            <span>Dosya yükleniyor...</span>
-                            <span>{{ uploadProgress }}%</span>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+                    </div>
+                    
+                    <!-- Chat column -->
+                    <div class="col s12 m8">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title" v-if="activeChat">
+                                    Chat with {{ getUsername(activeChat) }}
+                                    <span v-if="typingUsers[activeChat]" class="grey-text" style="font-size: 0.8em">
+                                        (typing...)
+                                    </span>
+                                </span>
+                                <span class="card-title" v-else>Select a user to chat</span>
+                                
+                                <div id="chatbox" v-if="activeChat">
+                                    <div v-for="message in filteredMessages" :key="message.timestamp">
+                                        <div class="message-info">
+                                            <img :src="getProfilePic(message.sender)" class="user-avatar" style="width: 25px; height: 25px;">
+                                            {{ message.sender }} • {{ formatTime(message.timestamp) }}
+                                        </div>
+                                        <div :class="['message', message.sender === usernameInput ? 'sent' : 'received']">
+                                            <div v-if="message.type === 'text'">
+                                                {{ message.content }}
+                                            </div>
+                                            <div v-else-if="message.type === 'file'">
+                                                <div class="file-message">
+                                                    <i class="material-icons file-icon">insert_drive_file</i>
+                                                    <div>
+                                                        <div>{{ message.fileName }}</div>
+                                                        <div style="font-size: 0.8em;">{{ formatFileSize(message.fileSize) }}</div>
+                                                        <a href="#" @click.prevent="downloadFile(message)">Download</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-else-if="message.type === 'image'">
+                                                <img :src="message.content" class="media-preview" @click="showFullscreen(message.content)">
+                                            </div>
+                                            <div v-else-if="message.type === 'video'">
+                                                <video controls class="media-preview">
+                                                    <source :src="message.content">
+                                                </video>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div v-else class="center grey-text" style="height: 300px; display: flex; align-items: center; justify-content: center;">
+                                    Select a user from the list to start chatting
+                                </div>
+                                
+                                <div class="typing-indicator">
+                                    {{ typingStatus }}
+                                </div>
+                                
+                                <div class="chat-input-container" v-if="activeChat">
+                                    <div class="file-field input-field chat-input">
+                                        <div class="btn blue action-button">
+                                            <i class="material-icons">attach_file</i>
+                                            <input type="file" id="file-upload" @change="handleFileUpload" :disabled="uploading">
+                                        </div>
+                                    </div>
+                                    
+                                    <input type="text" v-model="chatMessageInput" 
+                                           @keyup.enter="submitChat" 
+                                           @keyup="handleTyping"
+                                           class="chat-input" 
+                                           placeholder="Type your message...">
+                                    
+                                    <button class="btn waves-effect waves-light blue action-button" @click="submitChat">
+                                        <i class="material-icons">send</i>
+                                    </button>
+                                </div>
+                                
+                                <div class="progress-container" id="upload-progress">
+                                    <div class="progress">
+                                        <div class="determinate" :style="{width: uploadProgress + '%'}"></div>
+                                    </div>
+                                    <div class="center">{{ uploadProgress }}%</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <div class="media-fullscreen" v-if="fullscreenMedia" @click="fullscreenMedia = null">
+                <span class="close-fullscreen">&times;</span>
+                <img v-if="fullscreenMediaType === 'image'" :src="fullscreenMedia">
+                <video v-else controls autoplay>
+                    <source :src="fullscreenMedia">
+                </video>
             </div>
         </div>
     </div>
+</body>
 
-    <script>
-        const appPrefix = "elitechat-";
-        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-        const RECONNECT_DELAY = 3000;
+<script>
+    const appPrefix = "secure-p2p-multichat-";
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-        // Load data from localStorage
-        const loadData = (key, defaultValue) => {
-            try {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : defaultValue;
-            } catch (e) {
-                console.error("Error loading data from localStorage:", e);
-                return defaultValue;
+    // Load data from localStorage
+    const loadFromStorage = (key, defaultValue) => {
+        const item = localStorage.getItem(appPrefix + key);
+        return item ? JSON.parse(item) : defaultValue;
+    };
+
+    // Save data to localStorage
+    const saveToStorage = (key, value) => {
+        localStorage.setItem(appPrefix + key, JSON.stringify(value));
+    };
+
+    const app = new Vue({
+        el: "#app",
+        data: {
+            screen: "login",
+            usernameInput: "",
+            profilePicPreview: loadFromStorage("profilePic", null),
+            peerError: "",
+            loading: false,
+            peer: {},
+            targetIdInput: "",
+            peerIds: [],
+            connections: {},
+            messages: loadFromStorage("messages", []),
+            activeChat: null,
+            chatMessageInput: "",
+            typingUsers: {},
+            lastTypingTime: 0,
+            typingTimeout: null,
+            uploading: false,
+            uploadProgress: 0,
+            fullscreenMedia: null,
+            fullscreenMediaType: null,
+            userStatus: {}, // Track online status of users
+            fileToUpload: null
+        },
+        computed: {
+            filteredMessages() {
+                if (!this.activeChat) return [];
+                return this.messages.filter(msg => 
+                    (msg.sender === this.usernameInput && msg.receiver === this.getUsername(this.activeChat)) ||
+                    (msg.sender === this.getUsername(this.activeChat) && msg.receiver === this.usernameInput)
+                    .sort((a, b) => a.timestamp - b.timestamp);
+            },
+            typingStatus() {
+                if (!this.activeChat) return "";
+                const username = this.getUsername(this.activeChat);
+                return this.typingUsers[this.activeChat] ? `${username} is typing...` : "";
             }
-        };
-
-        const app = new Vue({
-            el: "#app",
-            data: {
-                screen: "login",
-                usernameInput: localStorage.getItem("username") || "",
-                peerError: "",
-                loading: false,
-                peer: null,
-                targetIdInput: "",
-                peerIds: [],
-                connections: {},
-                activePeer: null,
-                privateChats: loadData("privateChats", {}),
-                generalChats: loadData("generalChats", []),
-                messageInput: "",
-                uploadProgress: 0,
-                profilePictures: loadData("profilePictures", {}),
-                currentFile: null
+        },
+        watch: {
+            messages: {
+                handler() {
+                    this.scrollToBottom();
+                    saveToStorage("messages", this.messages);
+                },
+                deep: true
             },
-            mounted() {
-                // Initialize Materialize components
-                if (M) {
-                    M.AutoInit();
+            activeChat() {
+                this.scrollToBottom();
+            }
+        },
+        mounted() {
+            // Initialize from localStorage
+            this.usernameInput = loadFromStorage("username", "");
+            
+            // Initialize Materialize components
+            M.AutoInit();
+        },
+        methods: {
+            getPeerId(username) {
+                return appPrefix + username;
+            },
+            getUsername(peerId) {
+                return peerId ? peerId.slice(appPrefix.length) : "";
+            },
+            getProfilePic(username) {
+                const pic = loadFromStorage(`profilePic-${username}`);
+                return pic || 'https://via.placeholder.com/150';
+            },
+            formatTime(timestamp) {
+                return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+            },
+            isUserOnline(peerId) {
+                return this.userStatus[peerId] || false;
+            },
+            
+            scrollToBottom() {
+                this.$nextTick(() => {
+                    const chatbox = document.getElementById("chatbox");
+                    if (chatbox) chatbox.scrollTop = chatbox.scrollHeight;
+                });
+            },
+            
+            triggerProfilePicUpload() {
+                document.getElementById('profile-pic-upload').click();
+            },
+            
+            handleProfilePicChange(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.match('image.*')) {
+                    this.peerError = "Please select an image file";
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit for profile pics
+                    this.peerError = "Profile picture must be less than 5MB";
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.profilePicPreview = event.target.result;
+                    saveToStorage("profilePic", this.profilePicPreview);
+                };
+                reader.readAsDataURL(file);
+            },
+            
+            handleFileUpload(e) {
+                this.fileToUpload = e.target.files[0];
+                if (!this.fileToUpload) return;
+                
+                if (this.fileToUpload.size > MAX_FILE_SIZE) {
+                    this.peerError = `File size exceeds 50MB limit (${this.formatFileSize(this.fileToUpload.size)})`;
+                    this.fileToUpload = null;
+                    return;
+                }
+                
+                this.sendFile(this.fileToUpload);
+                e.target.value = ''; // Reset file input
+            },
+            
+            handleTyping() {
+                if (!this.activeChat) return;
+                
+                // Notify others that we're typing
+                this.sendTyping(true);
+                
+                // Clear previous timeout
+                if (this.typingTimeout) clearTimeout(this.typingTimeout);
+                
+                // Set a timeout to stop typing indication after 2 seconds of inactivity
+                this.typingTimeout = setTimeout(() => {
+                    this.sendTyping(false);
+                }, 2000);
+            },
+            
+            sendTyping(isTyping) {
+                if (!this.activeChat || !this.connections[this.activeChat]) return;
+                
+                this.connections[this.activeChat].send({
+                    type: "typing",
+                    isTyping,
+                    sender: this.usernameInput
+                });
+            },
+            
+            addConnection(conn) {
+                this.connections[conn.peer] = conn;
+                this.userStatus[conn.peer] = true; // Mark as online
+                this.updatePeerIds();
+                
+                // If we don't have an active chat, set it to this new connection
+                if (!this.activeChat) {
+                    this.activeChat = conn.peer;
+                }
+                
+                console.log(`Connected to ${conn.peer}!`);
+            },
+            
+            removeConnection(conn) {
+                if (this.connections[conn.peer]) {
+                    this.userStatus[conn.peer] = false; // Mark as offline
+                    delete this.connections[conn.peer];
+                    this.updatePeerIds();
+                    
+                    // If the active chat was this connection, clear it
+                    if (this.activeChat === conn.peer) {
+                        this.activeChat = null;
+                    }
                 }
             },
-            watch: {
-                privateChats: {
-                    handler() {
-                        this.savePrivateChats();
-                        this.$nextTick(this.scrollToBottom);
-                    },
-                    deep: true
-                },
-                generalChats: {
-                    handler() {
-                        this.saveGeneralChats();
-                        this.$nextTick(this.scrollToBottom);
-                    },
-                    deep: true
-                },
-                profilePictures: {
-                    handler() {
-                        this.saveProfilePictures();
-                    },
-                    deep: true
+            
+            updatePeerIds() {
+                this.peerIds = Object.keys(this.connections);
+            },
+            
+            disconnectPeer() {
+                if (this.peer.disconnected) {
+                    // If already disconnected, try to reconnect
+                    this.createPeer();
+                } else {
+                    this.peer.disconnect();
+                    // Update status for all connected users
+                    this.peerIds.forEach(peerId => {
+                        this.userStatus[peerId] = false;
+                    });
                 }
             },
-            methods: {
-                getPeerId(username) {
-                    return appPrefix + username;
-                },
-                getUsername(peerId) {
-                    return peerId ? peerId.slice(appPrefix.length) : "";
-                },
-                
-                formatTimestamp(timestamp) {
-                    if (!timestamp) return '';
-                    const date = new Date(timestamp);
-                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + 
-                           date.toLocaleDateString([], { day: 'numeric', month: 'short' });
-                },
-                
-                formatFileSize(bytes) {
-                    if (bytes === 0) return '0 Bytes';
-                    const k = 1024;
-                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return parseFloat((bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
-                },
-                
-                scrollToBottom() {
-                    const container = this.$refs.chatMessages;
-                    if (container) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                },
-                
-                setActivePeer(peerId) {
-                    this.activePeer = peerId;
-                    this.$nextTick(this.scrollToBottom);
-                },
-                
-                triggerProfilePicUpload() {
-                    document.getElementById('profile-pic-input').click();
-                },
-                
-                handleProfilePicChange(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    
-                    if (!file.type.match('image.*')) {
-                        this.showError("Lütfen bir resim dosyası seçin (JPEG, PNG, vb.)");
-                        return;
-                    }
-                    
-                    if (file.size > MAX_FILE_SIZE) {
-                        this.showError("Profil resmi 50MB'tan küçük olmalıdır");
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.$set(this.profilePictures, this.usernameInput, e.target.result);
-                        
-                        // Notify other users about profile picture change
-                        this.broadcast({
-                            type: "profilePic",
-                            username: this.usernameInput,
-                            imageData: e.target.result
+            
+            configureConnection(conn) {
+                conn.on("data", data => {
+                    if (data.type === "connections") {
+                        // Update our list of connections
+                        data.peerIds.forEach(peerId => {
+                            if (!this.connections[peerId] && peerId !== this.peer.id) {
+                                this.initiateConnection(peerId);
+                            }
                         });
-                    };
-                    reader.onerror = () => {
-                        this.showError("Resim yüklenirken hata oluştu");
-                    };
-                    reader.readAsDataURL(file);
-                },
-                
-                handleFileUpload(event) {
-                    this.currentFile = event.target.files[0];
-                    if (!this.currentFile) return;
-                    
-                    if (this.currentFile.size > MAX_FILE_SIZE) {
-                        this.showError("Dosya boyutu 50MB sınırını aşıyor");
-                        this.currentFile = null;
-                        return;
+                    } 
+                    else if (data.type === "chat") {
+                        this.receiveMessage(data.message);
+                    } 
+                    else if (data.type === "file") {
+                        this.receiveFile(data);
+                    } 
+                    else if (data.type === "typing") {
+                        this.$set(this.typingUsers, conn.peer, data.isTyping);
+                    } 
+                    else if (data.type === "profilePic") {
+                        saveToStorage(`profilePic-${data.username}`, data.picData);
+                        this.$forceUpdate(); // Refresh UI to show new profile pic
                     }
-                    
-                    // Clear the file input
-                    event.target.value = '';
-                },
+                });
                 
-                broadcast(data) {
-                    Object.values(this.connections).forEach(conn => {
-                        try {
-                            if (conn.open) {
-                                conn.send(data);
-                            }
-                        } catch (e) {
-                            console.error("Error sending data to connection:", e);
+                conn.on("close", () => this.removeConnection(conn));
+                conn.on("error", (err) => {
+                    console.error("Connection error:", err);
+                    this.removeConnection(conn);
+                });
+                
+                if (conn.metadata && conn.metadata.peerIds) {
+                    conn.metadata.peerIds.forEach(peerId => {
+                        if (!this.connections[peerId] && peerId !== this.peer.id) {
+                            this.initiateConnection(peerId);
                         }
                     });
-                },
-                
-                addConnection(conn) {
-                    if (!this.connections[conn.peer]) {
-                        this.connections[conn.peer] = conn;
-                        if (!this.peerIds.includes(conn.peer)) {
-                            this.peerIds.push(conn.peer);
-                        }
-                        console.log(`Connected to ${conn.peer}!`);
-                        
-                        // Initialize chat history if not exists
-                        if (!this.privateChats[conn.peer]) {
-                            this.$set(this.privateChats, conn.peer, []);
-                        }
-                    }
-                },
-                
-                removeConnection(conn) {
-                    if (this.connections[conn.peer]) {
-                        delete this.connections[conn.peer];
-                        this.peerIds = this.peerIds.filter(id => id !== conn.peer);
-                        console.log(`Disconnected from ${conn.peer}`);
-                        
-                        if (this.activePeer === conn.peer) {
-                            this.activePeer = null;
-                        }
-                    }
-                },
-                
-                disconnectPeer() {
-                    if (this.peer) {
-                        this.peer.disconnect();
-                        this.showMessage("Sunucu bağlantısı kesildi");
-                    }
-                },
-                
-                reconnectPeer() {
-                    if (this.peer) {
-                        this.peer.reconnect();
-                        this.showMessage("Yeniden bağlanılıyor...");
-                    }
-                },
-                
-                configureConnection(conn) {
-                    conn.on("data", data => {
-                        if (data.type === "privateChat") {
-                            if (!this.privateChats[conn.peer]) {
-                                this.$set(this.privateChats, conn.peer, []);
-                            }
-                            this.privateChats[conn.peer].push(data.chat);
-                        } else if (data.type === "generalChat") {
-                            this.generalChats.push(data.chat);
-                        } else if (data.type === "profilePic") {
-                            this.$set(this.profilePictures, data.username, data.imageData);
-                        }
-                    });
-                    
-                    conn.on("close", () => {
-                        this.removeConnection(conn);
-                        // Attempt to reconnect if this was an unexpected disconnect
-                        if (!this.peer.disconnected) {
-                            setTimeout(() => {
-                                if (!this.connections[conn.peer]) {
-                                    this.initiateConnection(conn.peer);
-                                }
-                            }, RECONNECT_DELAY);
-                        }
-                    });
-                    
-                    conn.on("error", (err) => {
-                        console.error("Connection error:", err);
-                        this.removeConnection(conn);
-                    });
-                },
-                
-                initiateConnection(peerId) {
-                    if (!this.peer || this.peer.disconnected) return;
-                    if (this.connections[peerId] || peerId === this.peer.id) return;
-                    
+                }
+            },
+            
+            initiateConnection(peerId) {
+                if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
                     this.loading = true;
                     this.peerError = "";
+                    
                     console.log(`Connecting to ${peerId}...`);
-
+                    
                     const options = {
                         metadata: {
+                            peerIds: this.peerIds,
                             username: this.usernameInput,
-                            profilePic: this.profilePictures[this.usernameInput]
+                            profilePic: this.profilePicPreview
                         },
                         serialization: "json",
-                        reliable: true
+                        reliable: true // Enable reliable data transfer for large files
                     };
                     
                     const conn = this.peer.connect(peerId, options);
                     this.configureConnection(conn);
-
+                    
                     conn.on("open", () => {
                         this.addConnection(conn);
-                        if (this.getUsername(peerId) === this.targetIdInput) {
-                            this.targetIdInput = "";
-                            this.loading = false;
-                        }
+                        this.loading = false;
                         
-                        // Send profile picture to the new connection
-                        if (this.profilePictures[this.usernameInput]) {
+                        // Share our profile picture with the new connection
+                        if (this.profilePicPreview) {
                             conn.send({
                                 type: "profilePic",
                                 username: this.usernameInput,
-                                imageData: this.profilePictures[this.usernameInput]
+                                picData: this.profilePicPreview
                             });
+                        }
+                        
+                        // If we initiated this connection with a target ID, clear it
+                        if (this.getUsername(peerId) === this.targetIdInput) {
+                            this.targetIdInput = "";
+                        }
+                        
+                        // Set this as active chat if none is selected
+                        if (!this.activeChat) {
+                            this.activeChat = peerId;
                         }
                     });
                     
                     conn.on("error", (err) => {
                         console.error("Connection error:", err);
                         this.loading = false;
-                        if (this.getUsername(peerId) === this.targetIdInput) {
-                            this.peerError = `${this.targetIdInput} kullanıcısına bağlanılamadı`;
-                            this.targetIdInput = "";
-                        }
+                        this.peerError = `Failed to connect to ${this.getUsername(peerId)}`;
                     });
-                },
+                }
+            },
+            
+            createPeer() {
+                this.loading = true;
+                this.peerError = "";
                 
-                createPeer() {
-                    this.peer = new Peer(this.getPeerId(this.usernameInput), {
-                        debug: 2,
-                        config: {
-                            iceServers: [
-                                { urls: 'stun:stun.l.google.com:19302' },
-                                { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
-                            ]
-                        }
-                    });
-
-                    this.peer.on("open", () => {
-                        this.screen = "chat";
+                // Destroy previous peer if it exists
+                if (this.peer && this.peer.destroy) {
+                    this.peer.destroy();
+                }
+                
+                this.peer = new Peer(this.getPeerId(this.usernameInput), {
+                    debug: 2 // Enable logging for debugging
+                });
+                
+                this.peer.on("open", () => {
+                    this.screen = "chat";
+                    this.loading = false;
+                    this.peerError = "";
+                    
+                    // Share our profile picture with existing connections
+                    if (this.profilePicPreview) {
+                        Object.values(this.connections).forEach(conn => {
+                            conn.send({
+                                type: "profilePic",
+                                username: this.usernameInput,
+                                picData: this.profilePicPreview
+                            });
+                        });
+                    }
+                });
+                
+                this.peer.on("error", error => {
+                    console.error("Peer error:", error);
+                    
+                    if (error.type === "peer-unavailable") {
                         this.loading = false;
-                        this.peerError = "";
+                        this.peerError = `${this.targetIdInput} is unreachable!`;
+                        this.targetIdInput = "";
+                    } 
+                    else if (error.type === "unavailable-id") {
+                        this.loading = false;
+                        this.peerError = `${this.usernameInput} is already taken!`;
+                    } 
+                    else if (error.type === "network") {
+                        this.peerError = "Network error. Please check your connection.";
+                    }
+                    else {
+                        this.peerError = error.message || "An error occurred";
+                    }
+                    
+                    // Try to reconnect after error
+                    setTimeout(() => {
+                        if (this.screen === "chat" && this.peer.disconnected) {
+                            this.createPeer();
+                        }
+                    }, 3000);
+                });
+                
+                this.peer.on("disconnected", () => {
+                    console.log("Peer disconnected");
+                    // Try to reconnect
+                    setTimeout(() => {
+                        if (this.screen === "chat") {
+                            this.createPeer();
+                        }
+                    }, 3000);
+                });
+                
+                this.peer.on("close", () => {
+                    console.log("Peer connection closed");
+                });
+                
+                this.peer.on('connection', conn => {
+                    if (!this.peerIds.includes(conn.peer)) {
+                        this.configureConnection(conn);
                         
-                        // Set up connection handler for incoming connections
-                        this.peer.on('connection', conn => {
-                            if (!this.connections[conn.peer]) {
-                                this.configureConnection(conn);
-
-                                conn.on("open", () => {
-                                    this.addConnection(conn);
-                                    
-                                    // Send profile picture to the new connection
-                                    if (this.profilePictures[this.usernameInput]) {
-                                        conn.send({
-                                            type: "profilePic",
-                                            username: this.usernameInput,
-                                            imageData: this.profilePictures[this.usernameInput]
-                                        });
-                                    }
+                        conn.on("open", () => {
+                            this.addConnection(conn);
+                            
+                            // Share our connections list
+                            conn.send({
+                                type: "connections",
+                                peerIds: this.peerIds
+                            });
+                            
+                            // Share our profile picture
+                            if (this.profilePicPreview) {
+                                conn.send({
+                                    type: "profilePic",
+                                    username: this.usernameInput,
+                                    picData: this.profilePicPreview
                                 });
                             }
                         });
-                    });
-
-                    this.peer.on("error", error => {
-                        console.error("Peer error:", error);
+                    }
+                });
+            },
+            
+            submitLogin(event) {
+                if (event) event.preventDefault();
+                
+                if (this.usernameInput.length > 0 && !this.loading) {
+                    this.loading = true;
+                    this.peerError = "";
+                    
+                    saveToStorage("username", this.usernameInput);
+                    
+                    // Save profile pic if it's new
+                    if (this.profilePicPreview) {
+                        saveToStorage(`profilePic-${this.usernameInput}`, this.profilePicPreview);
+                    }
+                    
+                    this.createPeer();
+                }
+            },
+            
+            submitConnection(event) {
+                event.preventDefault();
+                
+                if (!this.targetIdInput || this.targetIdInput === this.usernameInput) {
+                    this.peerError = "Invalid username";
+                    return;
+                }
+                
+                const peerId = this.getPeerId(this.targetIdInput);
+                this.initiateConnection(peerId);
+            },
+            
+            setActiveChat(peerId) {
+                this.activeChat = peerId;
+                // Clear typing indicator when switching chats
+                this.$set(this.typingUsers, peerId, false);
+            },
+            
+            receiveMessage(message) {
+                // Check if message already exists
+                const exists = this.messages.some(
+                    msg => msg.timestamp === message.timestamp && msg.sender === message.sender
+                );
+                
+                if (!exists) {
+                    this.messages.push(message);
+                }
+            },
+            
+            submitChat(event) {
+                if (event) event.preventDefault();
+                
+                if (this.chatMessageInput.length > 0 && this.activeChat) {
+                    const message = {
+                        type: "text",
+                        sender: this.usernameInput,
+                        receiver: this.getUsername(this.activeChat),
+                        content: this.chatMessageInput,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    this.receiveMessage(message);
+                    
+                    // Send to the active chat
+                    if (this.connections[this.activeChat]) {
+                        this.connections[this.activeChat].send({
+                            type: "chat",
+                            message
+                        });
+                    }
+                    
+                    this.chatMessageInput = "";
+                    this.sendTyping(false);
+                }
+            },
+            
+            sendFile(file) {
+                if (!this.activeChat || !this.connections[this.activeChat]) {
+                    this.peerError = "No active connection to send file";
+                    return;
+                }
+                
+                this.uploading = true;
+                this.uploadProgress = 0;
+                document.getElementById('upload-progress').style.display = 'block';
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fileData = event.target.result;
+                    
+                    // Create a message for the file
+                    const fileMessage = {
+                        type: file.type.startsWith('image/') ? 'image' : 
+                              file.type.startsWith('video/') ? 'video' : 'file',
+                        sender: this.usernameInput,
+                        receiver: this.getUsername(this.activeChat),
+                        fileName: file.name,
+                        fileSize: file.size,
+                        content: fileData,
+                        timestamp: new Date().getTime()
+                    };
+                    
+                    // Add to our messages
+                    this.receiveMessage(fileMessage);
+                    
+                    // Split the file into chunks for reliable transfer
+                    const CHUNK_SIZE = 16 * 1024; // 16KB chunks
+                    const totalChunks = Math.ceil(fileData.length / CHUNK_SIZE);
+                    let chunksSent = 0;
+                    
+                    const sendNextChunk = () => {
+                        const start = chunksSent * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, fileData.length);
+                        const chunk = fileData.slice(start, end);
                         
-                        if (error.type === "peer-unavailable") {
-                            this.loading = false;
-                            this.peerError = `${this.targetIdInput} kullanıcısı bulunamadı!`;
-                            this.targetIdInput = "";
-                        } else if (error.type === "unavailable-id") {
-                            this.loading = false;
-                            this.peerError = `${this.usernameInput} kullanıcı adı zaten alınmış!`;
-                            localStorage.removeItem("username");
-                        } else if (error.type === "network") {
-                            this.peerError = "Ağ hatası. Yeniden bağlanılıyor...";
-                            setTimeout(() => this.peer.reconnect(), RECONNECT_DELAY);
+                        this.connections[this.activeChat].send({
+                            type: "file",
+                            message: fileMessage,
+                            chunk: chunk,
+                            chunkIndex: chunksSent,
+                            totalChunks: totalChunks
+                        });
+                        
+                        chunksSent++;
+                        this.uploadProgress = Math.floor((chunksSent / totalChunks) * 100);
+                        
+                        if (chunksSent < totalChunks) {
+                            setTimeout(sendNextChunk, 0); // Small delay to prevent UI freeze
                         } else {
-                            this.peerError = error.message || error;
+                            this.uploading = false;
+                            document.getElementById('upload-progress').style.display = 'none';
                         }
-                    });
+                    };
                     
-                    this.peer.on("disconnected", () => {
-                        console.log("Peer disconnected");
-                        this.peerError = "Sunucu bağlantısı kesildi. Yeniden bağlanılıyor...";
-                        setTimeout(() => this.peer.reconnect(), RECONNECT_DELAY);
-                    });
-                    
-                    this.peer.on("close", () => {
-                        console.log("Peer connection closed");
-                        this.peerError = "Bağlantı kapatıldı. Sayfayı yenileyerek tekrar bağlanabilirsiniz.";
-                    });
-                },
+                    sendNextChunk();
+                };
                 
-                showError(message) {
-                    this.peerError = message;
-                    setTimeout(() => {
-                        if (this.peerError === message) {
-                            this.peerError = "";
-                        }
-                    }, 5000);
-                },
+                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsBinaryString(file);
+                }
+            },
+            
+            receiveFile(data) {
+                // Check if we've already received this file
+                const exists = this.messages.some(
+                    msg => msg.timestamp === data.message.timestamp && msg.sender === data.message.sender
+                );
                 
-                showMessage(message) {
-                    const oldError = this.peerError;
-                    this.peerError = message;
-                    setTimeout(() => {
-                        if (this.peerError === message) {
-                            this.peerError = oldError;
-                        }
-                    }, 3000);
-                },
-                
-                submitLogin() {
-                    if (this.usernameInput.length > 0 && !this.loading) {
-                        // Validate username
-                        if (this.usernameInput.length > 20) {
-                            this.showError("Kullanıcı adı en fazla 20 karakter olabilir");
-                            return;
-                        }
+                if (!exists) {
+                    if (data.totalChunks === 1) {
+                        // Single chunk file
+                        this.receiveMessage(data.message);
+                    } else {
+                        // Multi-chunk file - need to assemble
+                        if (!this.fileChunks) this.fileChunks = {};
                         
-                        if (/[^a-zA-Z0-9_-]/.test(this.usernameInput)) {
-                            this.showError("Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir");
-                            return;
-                        }
+                        const fileKey = `${data.message.sender}-${data.message.timestamp}`;
                         
-                        this.loading = true;
-                        this.peerError = "";
-                        localStorage.setItem("username", this.usernameInput);
-                        this.createPeer();
-                    }
-                },
-                
-                submitConnection() {
-                    if (!this.targetIdInput || this.targetIdInput === this.usernameInput) {
-                        this.showError("Geçersiz kullanıcı adı");
-                        return;
-                    }
-
-                    const peerId = this.getPeerId(this.targetIdInput);
-                    this.initiateConnection(peerId);
-                },
-                
-                savePrivateChats() {
-                    localStorage.setItem("privateChats", JSON.stringify(this.privateChats));
-                },
-                
-                saveGeneralChats() {
-                    localStorage.setItem("generalChats", JSON.stringify(this.generalChats));
-                },
-                
-                saveProfilePictures() {
-                    localStorage.setItem("profilePictures", JSON.stringify(this.profilePictures));
-                },
-                
-                sendMessage() {
-                    if (this.currentFile) {
-                        // Handle file upload
-                        this.uploadProgress = 0;
-                        
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const fileData = e.target.result;
-                            const chat = {
-                                sender: this.usernameInput,
-                                type: this.currentFile.type.match('image.*') ? 'image' : 'file',
-                                fileName: this.currentFile.name,
-                                fileSize: this.currentFile.size,
-                                fileUrl: fileData,
-                                timestamp: new Date().getTime()
+                        if (!this.fileChunks[fileKey]) {
+                            this.fileChunks[fileKey] = {
+                                receivedChunks: 0,
+                                totalChunks: data.totalChunks,
+                                chunks: new Array(data.totalChunks),
+                                message: data.message
                             };
-                            
-                            if (this.activePeer) {
-                                // Private message
-                                if (!this.privateChats[this.activePeer]) {
-                                    this.$set(this.privateChats, this.activePeer, []);
-                                }
-                                this.privateChats[this.activePeer].push(chat);
-                                
-                                // Send to recipient
-                                if (this.connections[this.activePeer]) {
-                                    this.connections[this.activePeer].send({
-                                        type: "privateChat",
-                                        chat
-                                    });
-                                }
-                            } else {
-                                // General message
-                                this.generalChats.push(chat);
-                                this.broadcast({
-                                    type: "generalChat",
-                                    chat
-                                });
-                            }
-                            
-                            this.currentFile = null;
-                            this.uploadProgress = 0;
-                        };
-                        
-                        reader.onerror = () => {
-                            this.showError("Dosya okunurken hata oluştu");
-                            this.currentFile = null;
-                            this.uploadProgress = 0;
-                        };
-                        
-                        // Simulate upload progress
-                        const progressInterval = setInterval(() => {
-                            this.uploadProgress += 10;
-                            if (this.uploadProgress >= 90) {
-                                clearInterval(progressInterval);
-                            }
-                        }, 150);
-                        
-                        reader.readAsDataURL(this.currentFile);
-                    } else if (this.messageInput.trim().length > 0) {
-                        const chat = {
-                            sender: this.usernameInput,
-                            type: "text",
-                            message: this.messageInput.trim(),
-                            timestamp: new Date().getTime()
-                        };
-
-                        if (this.activePeer) {
-                            // Private message
-                            if (!this.privateChats[this.activePeer]) {
-                                this.$set(this.privateChats, this.activePeer, []);
-                            }
-                            this.privateChats[this.activePeer].push(chat);
-                            
-                            // Send to recipient
-                            if (this.connections[this.activePeer]) {
-                                this.connections[this.activePeer].send({
-                                    type: "privateChat",
-                                    chat
-                                });
-                            }
-                        } else {
-                            // General message
-                            this.generalChats.push(chat);
-                            this.broadcast({
-                                type: "generalChat",
-                                chat
-                            });
                         }
-
-                        this.messageInput = "";
+                        
+                        // Store the chunk
+                        this.fileChunks[fileKey].chunks[data.chunkIndex] = data.chunk;
+                        this.fileChunks[fileKey].receivedChunks++;
+                        
+                        // Check if all chunks received
+                        if (this.fileChunks[fileKey].receivedChunks === data.totalChunks) {
+                            // Combine chunks
+                            const combinedData = this.fileChunks[fileKey].chunks.join('');
+                            const completeMessage = this.fileChunks[fileKey].message;
+                            completeMessage.content = combinedData;
+                            
+                            this.receiveMessage(completeMessage);
+                            delete this.fileChunks[fileKey];
+                        }
                     }
                 }
+            },
+            
+            downloadFile(message) {
+                let blob;
+                
+                if (message.type === 'image' || message.type === 'video') {
+                    // Convert data URL to blob
+                    const byteString = atob(message.content.split(',')[1]);
+                    const mimeString = message.content.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    
+                    blob = new Blob([ab], { type: mimeString });
+                } else {
+                    // For binary files
+                    const byteCharacters = message.content;
+                    const byteNumbers = new Array(byteCharacters.length);
+                    
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                }
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = message.fileName || 'download';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 0);
+            },
+            
+            showFullscreen(mediaSrc) {
+                this.fullscreenMedia = mediaSrc;
+                this.fullscreenMediaType = mediaSrc.startsWith('data:image') ? 'image' : 'video';
             }
-        });
-    </script>
-</body>
+        }
+    });
+</script>
 </html>
