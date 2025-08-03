@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Serverless Multichat with Files & Avatars</title>
+  <title>Genel & Özel Multichat</title>
   <script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <style>
     body {
-      font-family: "Red Hat Display";
+      font-family: "Red Hat Display", sans-serif;
       background-color: #ecf0f1;
     }
     #chatbox {
@@ -21,11 +21,6 @@
       background: white;
       border-radius: 8px;
     }
-    .row {
-      width: 100%;
-      margin: 0;
-      padding: 0 2em;
-    }
     .chat-avatar {
       width: 32px;
       height: 32px;
@@ -33,106 +28,113 @@
       vertical-align: middle;
       margin-right: 0.5em;
     }
-    .file-preview {
-      margin: 0.3em 0;
-    }
-    .file-preview img {
+    .file-preview img, .file-preview video {
       max-width: 200px;
       border-radius: 6px;
+      margin-top: 5px;
     }
-    .file-preview video {
-      max-width: 200px;
-      border-radius: 6px;
+    .tabs .tab a {
+      color: #444;
+    }
+    .tabs .tab a.active {
+      background-color: #e53935;
+      color: white;
     }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- Login Screen -->
-  <div id="login" v-if="screen === 'login'" class="container center-align">
-    <h4>Enter your username</h4>
-    <div class="row">
-      <form v-on:submit="submitLogin">
-        <div class="file-field input-field">
-          <div class="btn grey darken-2">
-            <span>Avatar</span>
-            <input type="file" accept="image/*" @change="onAvatarChange" />
-          </div>
-          <div class="file-path-wrapper">
-            <input class="file-path validate" type="text" placeholder="Upload profile picture">
-          </div>
+  <div v-if="screen === 'login'" class="container center-align">
+    <h4>Kullanıcı Adı Gir</h4>
+    <form @submit="submitLogin">
+      <div class="file-field input-field">
+        <div class="btn grey darken-2">
+          <span>Avatar</span>
+          <input type="file" accept="image/*" @change="onAvatarChange" />
         </div>
-        <img v-if="avatar" :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
-        <div class="input-field">
-          <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
-          <label for="username">Username</label>
-        </div>
-        <button class="btn-large red" type="submit" :disabled="loading">
-          Login<i class="material-icons right">login</i>
-        </button>
-        <p v-if="loading">Loading...</p>
-        <p v-if="peerError" style="color:red">{{ peerError }}</p>
-      </form>
-    </div>
-  </div>
-
-  <!-- Chat Screen -->
-  <div id="chat" v-if="screen === 'chat'" class="container">
-    <div class="row">
-      <div class="col s12 m4">
-        <h5>Welcome, {{ usernameInput }}</h5>
-        <img :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
-        <form v-on:submit="submitConnection" class="row">
-          <div class="input-field col s8">
-            <input :disabled="loading" id="target_id" type="text" v-model="targetIdInput" />
-            <label for="target_id">Target username</label>
-          </div>
-          <button class="btn waves-effect col s4" type="submit">
-            Connect
-          </button>
-        </form>
-        <button class="btn red" v-on:click="disconnectPeer">Disconnect</button>
-        <div>
-          <h6>Connected Users</h6>
-          <p><i class="material-icons">portrait</i> {{ usernameInput }}</p>
-          <p v-for="peerId in peerIds">
-            <i class="material-icons">portrait</i> {{ getUsername(peerId) }}
-          </p>
+        <div class="file-path-wrapper">
+          <input class="file-path validate" type="text" placeholder="Profil resmi seç">
         </div>
       </div>
+      <img v-if="avatar" :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
+      <div class="input-field">
+        <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
+        <label for="username">Kullanıcı adı</label>
+      </div>
+      <button class="btn-large red" type="submit" :disabled="loading">
+        Giriş Yap <i class="material-icons right">login</i>
+      </button>
+      <p v-if="peerError" style="color:red">{{ peerError }}</p>
+    </form>
+  </div>
+
+  <div v-if="screen === 'chat'" class="container">
+    <div class="row">
+      <div class="col s12 m4">
+        <h5>Hoş geldin, {{ usernameInput }}</h5>
+        <img :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
+        <form @submit="submitConnection" class="row">
+          <div class="input-field col s8">
+            <input id="target_id" type="text" v-model="targetIdInput" />
+            <label for="target_id">Kişiye Bağlan</label>
+          </div>
+          <button class="btn col s4">Bağlan</button>
+        </form>
+        <button class="btn red" @click="disconnectPeer">Bağlantıyı Kes</button>
+        <h6>Bağlı Kullanıcılar</h6>
+        <p><i class="material-icons">person</i> {{ usernameInput }}</p>
+        <p v-for="peerId in peerIds">
+          <i class="material-icons">person</i> {{ getUsername(peerId) }}
+        </p>
+      </div>
+
       <div class="col s12 m8">
-        <h5>Chatbox</h5>
+        <ul class="tabs">
+          <li class="tab col s6"><a href="#" @click.prevent="currentTab='general'" :class="{active: currentTab==='general'}">Genel Chat</a></li>
+          <li class="tab col s6"><a href="#" @click.prevent="currentTab='private'" :class="{active: currentTab==='private'}">Özel Chat</a></li>
+        </ul>
+
         <div id="chatbox">
-          <div v-for="chat in chats" class="chat-entry">
-            <p>
-              <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
-              <strong>{{ chat.sender }}:</strong> {{ chat.message }}
-            </p>
-            <div class="file-preview" v-if="chat.file">
-              <template v-if="chat.file.type.startsWith('image')">
-                <img :src="chat.file.url" />
-              </template>
-              <template v-else-if="chat.file.type.startsWith('video')">
-                <video controls :src="chat.file.url"></video>
-              </template>
-              <template v-else>
-                <a :href="chat.file.url" target="_blank">Download File ({{ chat.file.name }})</a>
-              </template>
+          <div v-if="currentTab === 'general'">
+            <div v-for="chat in generalChats">
+              <p>
+                <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
+                <strong>{{ chat.sender }}:</strong> {{ chat.message }}
+              </p>
+              <div class="file-preview" v-if="chat.file">
+                <img v-if="chat.file.type.startsWith('image')" :src="chat.file.url" />
+                <video v-else-if="chat.file.type.startsWith('video')" controls :src="chat.file.url"></video>
+                <a v-else :href="chat.file.url" target="_blank">{{ chat.file.name }}</a>
+              </div>
+            </div>
+          </div>
+          <div v-else>
+            <div v-for="chat in chats">
+              <p>
+                <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
+                <strong>{{ chat.sender }}:</strong> {{ chat.message }}
+              </p>
+              <div class="file-preview" v-if="chat.file">
+                <img v-if="chat.file.type.startsWith('image')" :src="chat.file.url" />
+                <video v-else-if="chat.file.type.startsWith('video')" controls :src="chat.file.url"></video>
+                <a v-else :href="chat.file.url" target="_blank">{{ chat.file.name }}</a>
+              </div>
             </div>
           </div>
         </div>
-        <form v-on:submit="submitChat" class="row">
-          <div class="input-field col s8">
+
+        <form @submit="submitChat" class="row">
+          <div class="input-field col s7">
             <input id="chat_message" type="text" v-model="chatMessageInput" />
-            <label for="chat_message">Your message</label>
+            <label for="chat_message">Mesaj</label>
           </div>
-          <div class="file-field input-field col s3">
+          <div class="file-field input-field col s4">
             <div class="btn grey">
-              <span>File</span>
+              <span>Dosya</span>
               <input type="file" @change="onFileChange" />
             </div>
             <div class="file-path-wrapper">
-              <input class="file-path validate" type="text" placeholder="Optional file">
+              <input class="file-path validate" type="text" placeholder="Dosya seç">
             </div>
           </div>
           <button class="btn-floating btn-large red col s1" type="submit">
@@ -146,9 +148,6 @@
 
 <script>
 const appPrefix = "secure-p2p-multichat-";
-const oldChats = localStorage.getItem("chats");
-const chats = oldChats ? JSON.parse(oldChats) : [];
-
 new Vue({
   el: "#app",
   data: {
@@ -161,159 +160,116 @@ new Vue({
     targetIdInput: "",
     peerIds: [],
     connections: {},
-    chats,
+    chats: JSON.parse(localStorage.getItem("privateChats") || "[]"),
+    generalChats: JSON.parse(localStorage.getItem("generalChats") || "[]"),
     chatMessageInput: "",
-    attachedFile: null
+    attachedFile: null,
+    currentTab: "general"
   },
   watch: {
     chats() {
-      const box = document.getElementById("chatbox");
-      if (box) box.scrollTop = box.scrollHeight;
-      localStorage.setItem("chats", JSON.stringify(this.chats));
+      localStorage.setItem("privateChats", JSON.stringify(this.chats));
+    },
+    generalChats() {
+      localStorage.setItem("generalChats", JSON.stringify(this.generalChats));
     }
   },
   methods: {
-    getPeerId(username) {
-      return appPrefix + username;
+    getPeerId(name) {
+      return appPrefix + name;
     },
-    getUsername(peerId) {
-      return peerId.slice(appPrefix.length);
+    getUsername(id) {
+      return id.replace(appPrefix, "");
     },
-    addConnection(conn) {
-      this.connections[conn.peer] = conn;
-      this.updatePeerIds();
-    },
-    removeConnection(conn) {
-      delete this.connections[conn.peer];
-      this.updatePeerIds();
-    },
-    updatePeerIds() {
-      this.peerIds = Object.keys(this.connections);
-    },
-    disconnectPeer() {
-      this.peer.disconnect();
-    },
-    onAvatarChange(event) {
-      const file = event.target.files[0];
-      if (file && file.size < 1024 * 1024 * 5) {
-        const reader = new FileReader();
-        reader.onload = e => {
+    onAvatarChange(e) {
+      const file = e.target.files[0];
+      if (file && file.size < 5 * 1024 * 1024) {
+        const r = new FileReader();
+        r.onload = e => {
           this.avatar = e.target.result;
           localStorage.setItem("avatar", this.avatar);
         };
-        reader.readAsDataURL(file);
-      } else {
-        alert("Avatar must be less than 5MB");
+        r.readAsDataURL(file);
       }
     },
-    onFileChange(event) {
-      const file = event.target.files[0];
-      if (file && file.size <= 1024 * 1024 * 50) {
-        const reader = new FileReader();
-        reader.onload = e => {
+    onFileChange(e) {
+      const file = e.target.files[0];
+      if (file && file.size <= 50 * 1024 * 1024) {
+        const r = new FileReader();
+        r.onload = e => {
           this.attachedFile = {
             name: file.name,
             type: file.type,
             url: e.target.result
           };
         };
-        reader.readAsDataURL(file);
-      } else {
-        alert("File must be under 50MB");
-        this.attachedFile = null;
+        r.readAsDataURL(file);
       }
     },
-    configureConnection(conn) {
-      conn.on("data", data => {
-        if (data.type === "connections") {
-          data.peerIds.forEach(pid => {
-            if (!this.connections[pid]) this.initiateConnection(pid);
-          });
-        } else if (data.type === "chat") {
-          this.receiveChat(data.chat);
-        }
-      });
-      conn.on("close", () => this.removeConnection(conn));
-      conn.on("error", () => this.removeConnection(conn));
-      conn.metadata.peerIds.forEach(pid => {
-        if (!this.connections[pid]) this.initiateConnection(pid);
-      });
-    },
-    initiateConnection(peerId) {
-      if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
-        this.loading = true;
-        const conn = this.peer.connect(peerId, {
-          metadata: { peerIds: this.peerIds },
-          serialization: "json"
-        });
-        this.configureConnection(conn);
-        conn.on("open", () => {
-          this.addConnection(conn);
-          if (this.getUsername(conn.peer) === this.targetIdInput) {
-            this.targetIdInput = "";
-            this.loading = false;
-          }
-        });
-      }
-    },
-    createPeer() {
+    submitLogin(e) {
+      e.preventDefault();
+      if (!this.usernameInput) return;
+      localStorage.setItem("username", this.usernameInput);
       this.peer = new Peer(this.getPeerId(this.usernameInput));
       this.peer.on("open", () => {
         this.screen = "chat";
         this.loading = false;
       });
-      this.peer.on("error", error => {
-        if (error.type === "peer-unavailable") {
-          this.peerError = `${this.targetIdInput} unreachable.`;
-        } else if (error.type === "unavailable-id") {
-          this.peerError = `${this.usernameInput} already taken.`;
-        } else {
-          this.peerError = error;
-        }
+      this.peer.on("connection", conn => {
+        this.configureConnection(conn);
+      });
+      this.peer.on("error", err => {
+        this.peerError = err.message;
         this.loading = false;
       });
-      this.peer.on("connection", conn => {
-        if (!this.peerIds.includes(conn.peer)) {
-          this.configureConnection(conn);
-          conn.on("open", () => {
-            this.addConnection(conn);
-            conn.send({ type: "connections", peerIds: this.peerIds });
+    },
+    submitConnection(e) {
+      e.preventDefault();
+      const id = this.getPeerId(this.targetIdInput);
+      const conn = this.peer.connect(id, {
+        metadata: { peerIds: this.peerIds },
+        serialization: "json"
+      });
+      this.configureConnection(conn);
+    },
+    configureConnection(conn) {
+      this.connections[conn.peer] = conn;
+      this.peerIds = Object.keys(this.connections);
+      conn.on("data", data => {
+        if (data.type === "chat") this.chats.push(data.chat);
+        if (data.type === "connections") {
+          data.peerIds.forEach(pid => {
+            if (!this.connections[pid]) {
+              const c = this.peer.connect(pid, { metadata: { peerIds: this.peerIds }, serialization: "json" });
+              this.configureConnection(c);
+            }
           });
         }
       });
     },
-    submitLogin(e) {
-      e.preventDefault();
-      if (this.usernameInput.length > 0 && !this.loading) {
-        this.loading = true;
-        localStorage.setItem("username", this.usernameInput);
-        this.createPeer();
-      }
-    },
-    submitConnection(e) {
-      e.preventDefault();
-      this.initiateConnection(this.getPeerId(this.targetIdInput));
-    },
-    receiveChat(chat) {
-      this.chats.push(chat);
+    disconnectPeer() {
+      this.peer.disconnect();
     },
     submitChat(e) {
       e.preventDefault();
-      if (this.chatMessageInput.trim().length > 0 || this.attachedFile) {
-        const chat = {
-          sender: this.usernameInput,
-          message: this.chatMessageInput,
-          timestamp: Date.now(),
-          avatar: this.avatar,
-          file: this.attachedFile
-        };
-        this.receiveChat(chat);
+      const isGeneral = this.currentTab === "general";
+      const chat = {
+        sender: this.usernameInput,
+        message: this.chatMessageInput,
+        avatar: this.avatar,
+        file: this.attachedFile,
+        timestamp: Date.now()
+      };
+      if (isGeneral) {
+        this.generalChats.push(chat);
+      } else {
+        this.chats.push(chat);
         Object.values(this.connections).forEach(conn =>
           conn.send({ type: "chat", chat })
         );
-        this.chatMessageInput = "";
-        this.attachedFile = null;
       }
+      this.chatMessageInput = "";
+      this.attachedFile = null;
     }
   }
 });
