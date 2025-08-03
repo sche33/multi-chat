@@ -1,1777 +1,322 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grup P2P Sohbet</title>
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3a0ca3;
-            --accent: #7209b7;
-            --error: #f72585;
-            --success: #4cc9f0;
-            --background: #f8f9fa;
-            --card: #ffffff;
-            --text: #2b2d42;
-            --text-light: #8d99ae;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        body {
-            background-color: var(--background);
-            color: var(--text);
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        /* Login Ekranı */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-        }
-        
-        .login-card {
-            background: var(--card);
-            padding: 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            transform: translateY(-10%);
-        }
-        
-        .login-card h1 {
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-            font-weight: 700;
-        }
-        
-        .profile-pic-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 1.5rem;
-        }
-        
-        .profile-pic {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-            border: 4px solid var(--primary);
-            transition: all 0.3s ease;
-        }
-        
-        .profile-pic:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .profile-pic-edit {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            background: var(--primary);
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        
-        input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            margin: 0.75rem 0;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.875rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-top: 1rem;
-            width: 100%;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        button:hover {
-            background-color: var(--secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        button:disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .btn-secondary {
-            background-color: white;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-        
-        .btn-secondary:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .error {
-            color: var(--error);
-            margin: 0.75rem 0;
-            font-size: 0.875rem;
-            text-align: center;
-        }
-        
-        /* Sohbet Ekranı */
-        .app-container {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            width: 300px;
-            background: var(--card);
-            border-right: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .sidebar-header {
-            padding: 1.25rem;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        
-        .user-info {
-            flex: 1;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            font-size: 0.9375rem;
-        }
-        
-        .user-status {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-        
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .online {
-            background-color: var(--success);
-        }
-        
-        .offline {
-            background-color: var(--text-light);
-        }
-        
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-        
-        .search-bar {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-        
-        .search-bar input {
-            padding-left: 2.5rem;
-            background-color: #f8f9fa;
-            border-color: #f8f9fa;
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-        }
-        
-        .section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-light);
-            margin: 1.5rem 0 0.5rem;
-            font-weight: 600;
-        }
-        
-        .user-list {
-            list-style: none;
-        }
-        
-        .user-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 0.25rem;
-            transition: all 0.2s;
-        }
-        
-        .user-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .user-item.active {
-            background-color: #edf2ff;
-        }
-        
-        .user-item-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 0.75rem;
-        }
-        
-        .user-item-info {
-            flex: 1;
-        }
-        
-        .user-item-name {
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        .user-item-status {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-        
-        .user-item-badge {
-            background-color: var(--primary);
-            color: white;
-            font-size: 0.6875rem;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: auto;
-        }
-        
-        /* Chat Area */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .chat-header {
-            padding: 1.25rem;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .chat-title {
-            flex: 1;
-            font-weight: 600;
-        }
-        
-        .chat-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .action-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-        
-        .action-btn:hover {
-            background-color: #e9ecef;
-        }
-        
-        .messages-container {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            background-color: #f8f9fa;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23e9ecef' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
-        }
-        
-        .message {
-            margin-bottom: 1rem;
-            max-width: 70%;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .message.sent {
-            background-color: var(--primary);
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-        
-        .message.received {
-            background-color: var(--card);
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .message-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-        
-        .message-info {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.25rem;
-            font-size: 0.75rem;
-        }
-        
-        .message-sender {
-            font-weight: 600;
-            margin-right: 0.5rem;
-        }
-        
-        .message-time {
-            color: var(--text-light);
-        }
-        
-        .message.sent .message-time {
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .file-message {
-            display: flex;
-            align-items: center;
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-        }
-        
-        .message.received .file-message {
-            background-color: #f1f3f5;
-        }
-        
-        .file-icon {
-            margin-right: 0.5rem;
-            color: inherit;
-        }
-        
-        .file-info {
-            flex: 1;
-        }
-        
-        .file-name {
-            font-size: 0.875rem;
-        }
-        
-        .file-size {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-        
-        .message.received .file-size {
-            color: var(--text-light);
-        }
-        
-        .file-download {
-            font-size: 0.75rem;
-            color: inherit;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 0.25rem;
-        }
-        
-        .media-preview {
-            max-width: 250px;
-            max-height: 250px;
-            border-radius: 8px;
-            margin-top: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .media-preview:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .typing-indicator {
-            font-size: 0.875rem;
-            color: var(--text-light);
-            font-style: italic;
-            height: 20px;
-            margin: 0.5rem 0;
-            padding: 0 1rem;
-        }
-        
-        .chat-input-container {
-            padding: 1rem;
-            border-top: 1px solid #e9ecef;
-            background-color: var(--card);
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .chat-input {
-            flex: 1;
-            padding: 0.875rem 1rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .chat-input:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-        
-        .file-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-        
-        .file-btn:hover {
-            background-color: #e9ecef;
-            color: var(--primary);
-        }
-        
-        .send-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--primary);
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-        
-        .send-btn:hover {
-            background-color: var(--secondary);
-        }
-        
-        .send-btn:disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-        }
-        
-        .progress-container {
-            margin-top: 0.5rem;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 6px;
-            background-color: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .progress {
-            height: 100%;
-            background-color: var(--primary);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        .progress-text {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            text-align: center;
-            margin-top: 0.25rem;
-        }
-        
-        /* Fullscreen Media */
-        .fullscreen-media {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        
-        .fullscreen-media img, .fullscreen-media video {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-        }
-        
-        .close-btn {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: none;
-            font-size: 1.5rem;
-        }
-        
-        /* Group Chat */
-        .group-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-        
-        .group-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-        
-        .group-members {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        
-        .group-member {
-            display: flex;
-            align-items: center;
-            padding: 0.375rem 0.75rem;
-            background-color: #f8f9fa;
-            border-radius: 20px;
-            font-size: 0.875rem;
-        }
-        
-        .group-member-avatar {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 0.375rem;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .app-container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 60vh;
-            }
-            
-            .chat-area {
-                height: 40vh;
-            }
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Serverless Multichat with Files & Avatars</title>
+  <script src="https://unpkg.com/peerjs@1.2.0/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <style>
+    body {
+      font-family: "Red Hat Display";
+      background-color: #ecf0f1;
+    }
+    #chatbox {
+      height: 25rem;
+      overflow-y: auto;
+      padding: 1em;
+      background: white;
+      border-radius: 8px;
+    }
+    .row {
+      width: 100%;
+      margin: 0;
+      padding: 0 2em;
+    }
+    .chat-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 0.5em;
+    }
+    .file-preview {
+      margin: 0.3em 0;
+    }
+    .file-preview img {
+      max-width: 200px;
+      border-radius: 6px;
+    }
+    .file-preview video {
+      max-width: 200px;
+      border-radius: 6px;
+    }
+  </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Giriş Ekranı -->
-        <div class="login-container" v-if="screen === 'login'">
-            <div class="login-card">
-                <h1>Grup Sohbetine Bağlan</h1>
-                
-                <div class="profile-pic-container" @click="triggerProfilePicUpload">
-                    <img :src="profilePic || 'https://i.imgur.com/7kI6gZy.png'" class="profile-pic">
-                    <div class="profile-pic-edit">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M20.71 7.04C21.1 6.65 21.1 6 20.71 5.63L18.37 3.29C18 2.9 17.35 2.9 16.96 3.29L15.12 5.12L18.87 8.87M3 17.25V21H6.75L17.81 9.93L14.06 6.18L3 17.25Z" />
-                        </svg>
-                    </div>
-                    <input type="file" id="profile-pic-upload" class="file-input" 
-                           accept="image/*" @change="handleProfilePicChange">
-                </div>
-                
-                <input type="text" v-model="username" 
-                       placeholder="Kullanıcı adınız" 
-                       :disabled="loading">
-                
-                <button @click="login" :disabled="!username || loading">
-                    <svg width="20" height="20" viewBox="0 0 24 24" v-if="!loading">
-                        <path fill="currentColor" d="M10,17V14H3V10H10V7L15,12L10,17M10,2H19A2,2 0 0,1 21,4V20A2,2 0 0,1 19,22H10A2,2 0 0,1 8,20V18H10V20H19V4H10V6H8V4A2,2 0 0,1 10,2Z" />
-                    </svg>
-                    <span v-if="!loading">Giriş Yap</span>
-                    <span v-else>Bağlanıyor...</span>
-                </button>
-                
-                <div class="error" v-if="error">{{ error }}</div>
-            </div>
+<div id="app">
+  <!-- Login Screen -->
+  <div id="login" v-if="screen === 'login'" class="container center-align">
+    <h4>Enter your username</h4>
+    <div class="row">
+      <form v-on:submit="submitLogin">
+        <div class="file-field input-field">
+          <div class="btn grey darken-2">
+            <span>Avatar</span>
+            <input type="file" accept="image/*" @change="onAvatarChange" />
+          </div>
+          <div class="file-path-wrapper">
+            <input class="file-path validate" type="text" placeholder="Upload profile picture">
+          </div>
         </div>
-        
-        <!-- Sohbet Ekranı -->
-        <div class="app-container" v-if="screen === 'chat'">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <img :src="profilePic || 'https://i.imgur.com/7kI6gZy.png'" class="user-avatar">
-                    <div class="user-info">
-                        <div class="user-name">{{ username }}</div>
-                        <div class="user-status">
-                            <span class="status-indicator online"></span>
-                            Çevrimiçi
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="sidebar-content">
-                    <div class="search-bar">
-                        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" />
-                        </svg>
-                        <input type="text" placeholder="Ara...">
-                    </div>
-                    
-                    <div class="section-title">Grup Sohbetleri</div>
-                    <ul class="user-list">
-                        <li class="user-item active" @click="selectChat('group')">
-                            <div class="group-avatar">
-                                <svg width="24" height="24" viewBox="0 0 24 24">
-                                    <path fill="currentColor" d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25M0,20V18.5C0,17.11 1.89,15.94 4.45,15.6C3.86,16.28 3.5,17.22 3.5,18.25V20H0M24,20H20.5V18.25C20.5,17.22 20.14,16.28 19.55,15.6C22.11,15.94 24,17.11 24,18.5V20Z" />
-                                </svg>
-                            </div>
-                            <div class="user-item-info">
-                                <div class="user-item-name">Grup Sohbeti</div>
-                                <div class="user-item-status">
-                                    {{ groupMembers.length }} üye
-                                </div>
-                            </div>
-                            <div class="user-item-badge" v-if="unreadGroupMessages > 0">
-                                {{ unreadGroupMessages }}
-                            </div>
-                        </li>
-                    </ul>
-                    
-                    <div class="section-title">Birebir Sohbetler</div>
-                    <ul class="user-list">
-                        <li v-for="user in users" 
-                            :key="user.peerId" 
-                            class="user-item"
-                            @click="selectChat(user.peerId)"
-                            :class="{ active: activeChat === user.peerId }">
-                            <img :src="user.profilePic || 'https://i.imgur.com/7kI6gZy.png'" class="user-item-avatar">
-                            <div class="user-item-info">
-                                <div class="user-item-name">{{ user.username }}</div>
-                                <div class="user-item-status">
-                                    <span class="status-indicator" :class="user.online ? 'online' : 'offline'"></span>
-                                    {{ user.online ? 'Çevrimiçi' : 'Çevrimdışı' }}
-                                </div>
-                            </div>
-                            <div class="user-item-badge" v-if="user.unreadMessages > 0">
-                                {{ user.unreadMessages }}
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div style="padding: 1rem; border-top: 1px solid #e9ecef;">
-                    <input type="text" v-model="newUser" placeholder="Kullanıcı adı ekle">
-                    <button @click="connectToUser" class="btn-secondary" style="margin-top: 0.5rem;">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
-                        </svg>
-                        Bağlan
-                    </button>
-                    <div class="error" v-if="connectionError">{{ connectionError }}</div>
-                </div>
-            </div>
-            
-            <!-- Chat Area -->
-            <div class="chat-area">
-                <div class="chat-header" v-if="activeChat === 'group'">
-                    <div class="chat-title">Grup Sohbeti</div>
-                    <div class="chat-actions">
-                        <button class="action-btn" title="Grup Bilgisi">
-                            <svg width="20" height="20" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,3A9,9 0 0,1 21,12A9,9 0 0,1 12,21A9,9 0 0,1 3,12A9,9 0 0,1 12,3M11,6.5V8H13V6.5H11M11,10V15H13V10H11Z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="chat-header" v-else-if="activeChat">
-                    <img :src="getActiveUserProfilePic()" class="user-avatar">
-                    <div class="chat-title">{{ getActiveUserName() }}</div>
-                    <div class="chat-actions">
-                        <button class="action-btn" title="Aramaya Başla">
-                            <svg width="20" height="20" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M20,11H4V8H20M20,15H13V13H20M20,19H13V17H20M11,19H4V13H11M20.33,4.67L18.67,3L17,4.67L15.33,3L13.67,4.67L12,3L10.33,4.67L8.67,3L7,4.67L5.33,3L3.67,4.67L2,3V19A2,2 0 0,0 4,21H20A2,2 0 0,0 22,19V3L20.33,4.67Z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="messages-container" ref="messages">
-                    <template v-if="activeChat === 'group'">
-                        <!-- Grup sohbeti mesajları -->
-                        <div v-for="msg in groupMessages" :key="msg.timestamp" class="message-group">
-                            <div class="message-info">
-                                <img :src="getProfilePic(msg.sender)" class="user-avatar" style="width: 24px; height: 24px;">
-                                <span class="message-sender">{{ msg.sender }}</span>
-                                <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
-                            </div>
-                            <div :class="['message', msg.sender === username ? 'sent' : 'received']">
-                                <div v-if="msg.type === 'text'">
-                                    {{ msg.content }}
-                                </div>
-                                <div v-else-if="msg.type === 'file'">
-                                    <div class="file-message">
-                                        <svg class="file-icon" width="20" height="20" viewBox="0 0 24 24">
-                                            <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                                        </svg>
-                                        <div class="file-info">
-                                            <div class="file-name">{{ msg.fileName }}</div>
-                                            <div class="file-size">{{ formatFileSize(msg.fileSize) }}</div>
-                                            <a href="#" @click.prevent="downloadFile(msg)" class="file-download">İndir</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-else-if="msg.type === 'image'">
-                                    <img :src="msg.content" class="media-preview" @click="showFullscreen(msg.content)">
-                                </div>
-                                <div v-else-if="msg.type === 'video'">
-                                    <video controls class="media-preview">
-                                        <source :src="msg.content">
-                                    </video>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                    
-                    <template v-else-if="activeChat">
-                        <!-- Birebir sohbet mesajları -->
-                        <div v-for="msg in privateMessages" :key="msg.timestamp" class="message-group">
-                            <div :class="['message', msg.sender === username ? 'sent' : 'received']">
-                                <div v-if="msg.type === 'text'">
-                                    {{ msg.content }}
-                                </div>
-                                <div v-else-if="msg.type === 'file'">
-                                    <div class="file-message">
-                                        <svg class="file-icon" width="20" height="20" viewBox="0 0 24 24">
-                                            <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                                        </svg>
-                                        <div class="file-info">
-                                            <div class="file-name">{{ msg.fileName }}</div>
-                                            <div class="file-size">{{ formatFileSize(msg.fileSize) }}</div>
-                                            <a href="#" @click.prevent="downloadFile(msg)" class="file-download">İndir</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-else-if="msg.type === 'image'">
-                                    <img :src="msg.content" class="media-preview" @click="showFullscreen(msg.content)">
-                                </div>
-                                <div v-else-if="msg.type === 'video'">
-                                    <video controls class="media-preview">
-                                        <source :src="msg.content">
-                                    </video>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                    
-                    <template v-else>
-                        <!-- Hoş geldin mesajı -->
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 2rem; color: var(--text-light);">
-                            <svg width="64" height="64" viewBox="0 0 24 24" style="margin-bottom: 1rem;">
-                                <path fill="currentColor" d="M12,3C16.97,3 21,7.03 21,12C21,16.97 16.97,21 12,21C7.03,21 3,16.97 3,12C3,7.03 7.03,3 12,3M12,15C13.66,15 15,13.66 15,12C15,10.34 13.66,9 12,9C10.34,9 9,10.34 9,12C9,13.66 10.34,15 12,15M6,12C6,13 6.25,13.92 6.69,14.77C5.92,15.23 5,15.5 4,15.5C2.07,15.5 0.5,13.93 0.5,12C0.5,10.07 2.07,8.5 4,8.5C5,8.5 5.92,8.77 6.69,9.23C6.25,10.08 6,11 6,12M12,17C13.5,17 14.9,16.53 16,15.77C16,14.67 16,13.33 16,12C16,10.67 16,9.33 16,8.23C14.9,7.47 13.5,7 12,7C10.5,7 9.1,7.47 8,8.23V15.77C9.1,16.53 10.5,17 12,17M20,12C20,10.07 18.93,8.5 17,8.5C16,8.5 15.08,8.77 14.31,9.23C14.75,10.08 15,11 15,12C15,13 14.75,13.92 14.31,14.77C15.08,15.23 16,15.5 17,15.5C18.93,15.5 20,13.93 20,12Z" />
-                            </svg>
-                            <h3 style="margin-bottom: 0.5rem; color: var(--text);">P2P Grup Sohbeti</h3>
-                            <p>Soldaki listeden bir sohbet seçin veya yeni bir kullanıcı ekleyin</p>
-                            <p style="margin-top: 1rem; font-size: 0.875rem;">
-                                <strong>{{ users.length + 1 }}</strong> çevrimiçi kullanıcı • 
-                                <strong>{{ groupMembers.length }}</strong> grup üyesi
-                            </p>
-                        </div>
-                    </template>
-                    
-                    <div class="typing-indicator">
-                        {{ typingText }}
-                    </div>
-                </div>
-                
-                <div class="chat-input-container" v-if="activeChat">
-                    <div class="input-group">
-                        <button class="file-btn" title="Dosya Gönder (50MB'a kadar)" @click="triggerFileUpload">
-                            <svg width="24" height="24" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                            </svg>
-                            <input type="file" id="file-upload" class="file-input" 
-                                   @change="handleFileUpload" :disabled="uploading">
-                        </button>
-                        
-                        <input type="text" class="chat-input" v-model="message" 
-                               @keyup.enter="sendMessage"
-                               @keyup="handleTyping"
-                               placeholder="Mesajınızı yazın...">
-                        
-                        <button class="send-btn" @click="sendMessage" :disabled="!message">
-                            <svg width="24" height="24" viewBox="0 0 24 24">
-                                <path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="progress-container" v-if="uploading">
-                        <div class="progress-bar">
-                            <div class="progress" :style="{ width: uploadProgress + '%' }"></div>
-                        </div>
-                        <div class="progress-text">Dosya gönderiliyor: {{ uploadProgress }}%</div>
-                    </div>
-                </div>
-            </div>
+        <img v-if="avatar" :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
+        <div class="input-field">
+          <input :disabled="loading" id="username" type="text" v-model="usernameInput" />
+          <label for="username">Username</label>
         </div>
-        
-        <!-- Tam Ekran Medya Görüntüleyici -->
-        <div class="fullscreen-media" v-if="fullscreenMedia" @click="fullscreenMedia = null">
-            <button class="close-btn" @click="fullscreenMedia = null">
-                &times;
-            </button>
-            <img v-if="fullscreenMediaType === 'image'" :src="fullscreenMedia">
-            <video v-else controls autoplay>
-                <source :src="fullscreenMedia">
-            </video>
-        </div>
+        <button class="btn-large red" type="submit" :disabled="loading">
+          Login<i class="material-icons right">login</i>
+        </button>
+        <p v-if="loading">Loading...</p>
+        <p v-if="peerError" style="color:red">{{ peerError }}</p>
+      </form>
     </div>
+  </div>
 
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    
-    <script>
-        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-        const MAX_GROUP_MEMBERS = 20;
-        
-        new Vue({
-            el: '#app',
-            data: {
-                screen: 'login',
-                username: '',
-                profilePic: null,
-                loading: false,
-                error: '',
-                
-                // PeerJS bağlantısı
-                peer: null,
-                
-                // Kullanıcılar ve sohbetler
-                users: [],
-                activeChat: null,
-                newUser: '',
-                connectionError: '',
-                
-                // Mesajlaşma
-                message: '',
-                messages: [],
-                groupMessages: [],
-                typingUsers: {},
-                lastTypingTime: 0,
-                typingTimeout: null,
-                
-                // Dosya transferi
-                uploading: false,
-                uploadProgress: 0,
-                fileToUpload: null,
-                fileChunks: {},
-                
-                // Medya görüntüleme
-                fullscreenMedia: null,
-                fullscreenMediaType: null,
-                
-                // Grup sohbeti
-                groupMembers: [],
-                unreadGroupMessages: 0
-            },
-            computed: {
-                privateMessages() {
-                    if (!this.activeChat) return [];
-                    const otherUser = this.users.find(u => u.peerId === this.activeChat);
-                    if (!otherUser) return [];
-                    
-                    return this.messages.filter(msg => 
-                        (msg.sender === this.username && msg.receiver === otherUser.username) ||
-                        (msg.sender === otherUser.username && msg.receiver === this.username)
-                    ).sort((a, b) => a.timestamp - b.timestamp);
-                },
-                typingText() {
-                    if (!this.activeChat) return '';
-                    
-                    if (this.activeChat === 'group') {
-                        const typingUsers = Object.entries(this.typingUsers)
-                            .filter(([_, isTyping]) => isTyping)
-                            .map(([peerId]) => {
-                                const user = this.users.find(u => u.peerId === peerId);
-                                return user ? user.username : null;
-                            })
-                            .filter(Boolean);
-                        
-                        if (typingUsers.length === 0) return '';
-                        if (typingUsers.length === 1) return `${typingUsers[0]} yazıyor...`;
-                        if (typingUsers.length === 2) return `${typingUsers[0]} ve ${typingUsers[1]} yazıyor...`;
-                        return `${typingUsers[0]}, ${typingUsers[1]} ve ${typingUsers.length - 2} diğer kişi yazıyor...`;
-                    } else {
-                        const user = this.users.find(u => u.peerId === this.activeChat);
-                        if (!user || !this.typingUsers[this.activeChat]) return '';
-                        return `${user.username} yazıyor...`;
-                    }
-                }
-            },
-            watch: {
-                privateMessages() {
-                    this.$nextTick(() => this.scrollToBottom());
-                },
-                groupMessages() {
-                    this.$nextTick(() => this.scrollToBottom());
-                },
-                activeChat(newVal, oldVal) {
-                    if (newVal === 'group') {
-                        this.unreadGroupMessages = 0;
-                    } else if (oldVal && oldVal !== 'group') {
-                        const user = this.users.find(u => u.peerId === oldVal);
-                        if (user) user.unreadMessages = 0;
-                    }
-                }
-            },
-            methods: {
-                // Yardımcı fonksiyonlar
-                generatePeerId(username) {
-                    return `p2p-chat-${username}`;
-                },
-                formatTime(timestamp) {
-                    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                },
-                formatFileSize(bytes) {
-                    if (bytes === 0) return '0 Byte';
-                    const k = 1024;
-                    const sizes = ['Byte', 'KB', 'MB', 'GB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                },
-                scrollToBottom() {
-                    const container = this.$refs.messages;
-                    if (container) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                },
-                getProfilePic(username) {
-                    if (username === this.username) return this.profilePic;
-                    const user = this.users.find(u => u.username === username);
-                    return user?.profilePic || 'https://i.imgur.com/7kI6gZy.png';
-                },
-                getActiveUserName() {
-                    if (!this.activeChat) return '';
-                    const user = this.users.find(u => u.peerId === this.activeChat);
-                    return user?.username || '';
-                },
-                getActiveUserProfilePic() {
-                    if (!this.activeChat) return '';
-                    const user = this.users.find(u => u.peerId === this.activeChat);
-                    return user?.profilePic || 'https://i.imgur.com/7kI6gZy.png';
-                },
-                
-                // Profil fotoğrafı yükleme
-                triggerProfilePicUpload() {
-                    document.getElementById('profile-pic-upload').click();
-                },
-                handleProfilePicChange(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    if (!file.type.match('image.*')) {
-                        this.error = "Lütfen bir resim dosyası seçin";
-                        return;
-                    }
-                    
-                    if (file.size > 2 * 1024 * 1024) {
-                        this.error = "Profil fotoğrafı 2MB'tan büyük olamaz";
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.profilePic = e.target.result;
-                        this.error = '';
-                        
-                        // Bağlı kullanıcılara yeni profil fotoğrafını bildir
-                        this.broadcastProfileUpdate();
-                    };
-                    reader.readAsDataURL(file);
-                },
-                
-                // Kullanıcı girişi
-                login() {
-                    if (!this.username) {
-                        this.error = "Lütfen bir kullanıcı adı girin";
-                        return;
-                    }
-                    
-                    this.loading = true;
-                    this.error = '';
-                    
-                    // PeerJS bağlantısını oluştur
-                    this.peer = new Peer(this.generatePeerId(this.username), {
-                        debug: 2
-                    };
-                    
-                    this.peer.on('open', () => {
-                        this.screen = 'chat';
-                        this.loading = false;
-                        this.groupMembers = [this.username]; // Kendimizi gruba ekle
-                    });
-                    
-                    this.peer.on('error', (err) => {
-                        this.loading = false;
-                        
-                        if (err.type === 'unavailable-id') {
-                            this.error = "Bu kullanıcı adı zaten alınmış";
-                        } else {
-                            this.error = `Hata: ${err.message || err.type}`;
-                        }
-                    });
-                    
-                    this.peer.on('connection', (conn) => {
-                        this.handleNewConnection(conn);
-                    });
-                    
-                    this.peer.on('disconnected', () => {
-                        console.log("Bağlantı kesildi, yeniden bağlanılıyor...");
-                        setTimeout(() => {
-                            if (!this.peer.destroyed) {
-                                this.peer.reconnect();
-                            }
-                        }, 1000);
-                    });
-                    
-                    this.peer.on('close', () => {
-                        console.log("Peer bağlantısı kapatıldı");
-                    });
-                },
-                
-                // Yeni bağlantı yönetimi
-                handleNewConnection(conn) {
-                    conn.on('open', () => {
-                        // Kullanıcıyı listeye ekle
-                        const existingUser = this.users.find(u => u.peerId === conn.peer);
-                        
-                        if (!existingUser) {
-                            this.users.push({
-                                peerId: conn.peer,
-                                username: conn.metadata?.username || 'Bilinmeyen',
-                                profilePic: conn.metadata?.profilePic || null,
-                                online: true,
-                                conn: conn,
-                                unreadMessages: 0
-                            });
-                        } else {
-                            existingUser.online = true;
-                            existingUser.conn = conn;
-                        }
-                        
-                        // Gruba ekle (eğer 20 kişiyi geçmiyorsa)
-                        if (this.groupMembers.length < MAX_GROUP_MEMBERS && 
-                            !this.groupMembers.includes(conn.metadata?.username)) {
-                            this.groupMembers.push(conn.metadata?.username);
-                        }
-                        
-                        // Profil bilgilerimizi paylaş
-                        conn.send({
-                            type: 'profile',
-                            username: this.username,
-                            profilePic: this.profilePic
-                        });
-                        
-                        // Grup bilgisini paylaş
-                        conn.send({
-                            type: 'group',
-                            members: this.groupMembers
-                        });
-                        
-                        // Aktif sohbet yoksa bu kullanıcıyı seç
-                        if (!this.activeChat) {
-                            this.activeChat = conn.peer;
-                        }
-                    });
-                    
-                    conn.on('data', (data) => {
-                        this.handleIncomingData(conn, data);
-                    });
-                    
-                    conn.on('close', () => {
-                        this.handleConnectionClose(conn.peer);
-                    });
-                    
-                    conn.on('error', (err) => {
-                        console.error("Bağlantı hatası:", err);
-                        this.handleConnectionClose(conn.peer);
-                    });
-                },
-                
-                // Gelen veriyi işle
-                handleIncomingData(conn, data) {
-                    if (data.type === 'message') {
-                        this.handleIncomingMessage(conn, data.message);
-                    } 
-                    else if (data.type === 'typing') {
-                        this.$set(this.typingUsers, conn.peer, data.isTyping);
-                    } 
-                    else if (data.type === 'profile') {
-                        this.updateUserProfile(conn.peer, data.username, data.profilePic);
-                    }
-                    else if (data.type === 'file') {
-                        this.handleFileTransfer(conn, data);
-                    }
-                    else if (data.type === 'group') {
-                        this.updateGroupMembers(data.members);
-                    }
-                },
-                
-                // Gelen mesajı işle
-                handleIncomingMessage(conn, message) {
-                    if (message.receiver === 'group') {
-                        // Grup mesajı
-                        this.groupMessages.push(message);
-                        
-                        if (this.activeChat !== 'group') {
-                            this.unreadGroupMessages++;
-                        }
-                    } else {
-                        // Birebir mesaj
-                        this.messages.push(message);
-                        
-                        const user = this.users.find(u => u.peerId === conn.peer);
-                        if (user && this.activeChat !== conn.peer) {
-                            user.unreadMessages++;
-                        }
-                    }
-                },
-                
-                // Kullanıcı profilini güncelle
-                updateUserProfile(peerId, username, profilePic) {
-                    const user = this.users.find(u => u.peerId === peerId);
-                    if (user) {
-                        user.username = username;
-                        user.profilePic = profilePic;
-                        
-                        // Grubu güncelle
-                        const index = this.groupMembers.findIndex(m => m === user.username);
-                        if (index === -1 && this.groupMembers.length < MAX_GROUP_MEMBERS) {
-                            this.groupMembers.push(username);
-                        }
-                    }
-                },
-                
-                // Grup üyelerini güncelle
-                updateGroupMembers(members) {
-                    // Benzersiz üyeleri al ve maksimum 20 kişiyle sınırla
-                    const uniqueMembers = [...new Set([...this.groupMembers, ...members])].slice(0, MAX_GROUP_MEMBERS);
-                    this.groupMembers = uniqueMembers;
-                },
-                
-                // Bağlantı kesildiğinde
-                handleConnectionClose(peerId) {
-                    const user = this.users.find(u => u.peerId === peerId);
-                    if (user) {
-                        user.online = false;
-                        user.conn = null;
-                    }
-                },
-                
-                // Profil güncellemesini yayınla
-                broadcastProfileUpdate() {
-                    this.users.forEach(user => {
-                        if (user.conn) {
-                            try {
-                                user.conn.send({
-                                    type: 'profile',
-                                    username: this.username,
-                                    profilePic: this.profilePic
-                                });
-                            } catch (err) {
-                                console.error("Profil güncelleme gönderilemedi:", err);
-                            }
-                        }
-                    });
-                },
-                
-                // Yeni kullanıcıya bağlan
-                connectToUser() {
-                    if (!this.newUser || this.newUser === this.username) {
-                        this.connectionError = "Geçersiz kullanıcı adı";
-                        return;
-                    }
-                    
-                    const peerId = this.generatePeerId(this.newUser);
-                    
-                    // Zaten bağlı mı kontrol et
-                    if (this.users.some(u => u.peerId === peerId && u.online)) {
-                        this.activeChat = peerId;
-                        this.newUser = '';
-                        this.connectionError = '';
-                        return;
-                    }
-                    
-                    this.connectionError = '';
-                    
-                    const conn = this.peer.connect(peerId, {
-                        metadata: {
-                            username: this.username,
-                            profilePic: this.profilePic
-                        },
-                        reliable: true
-                    });
-                    
-                    this.handleNewConnection(conn);
-                    
-                    // Kullanıcıyı listeye ekle (henüz bağlı değil)
-                    if (!this.users.some(u => u.peerId === peerId)) {
-                        this.users.push({
-                            peerId: peerId,
-                            username: this.newUser,
-                            profilePic: null,
-                            online: false,
-                            conn: null,
-                            unreadMessages: 0
-                        });
-                    }
-                    
-                    this.activeChat = peerId;
-                    this.newUser = '';
-                },
-                
-                // Sohbet seç
-                selectChat(peerId) {
-                    this.activeChat = peerId;
-                    
-                    // Yazma göstergesini sıfırla
-                    this.$set(this.typingUsers, peerId, false);
-                    
-                    // Bildirimleri sıfırla
-                    if (peerId === 'group') {
-                        this.unreadGroupMessages = 0;
-                    } else {
-                        const user = this.users.find(u => u.peerId === peerId);
-                        if (user) user.unreadMessages = 0;
-                    }
-                },
-                
-                // Mesaj gönder
-                sendMessage() {
-                    if (!this.message.trim()) return;
-                    
-                    if (this.activeChat === 'group') {
-                        this.sendGroupMessage();
-                    } else if (this.activeChat) {
-                        this.sendPrivateMessage();
-                    }
-                    
-                    this.message = '';
-                    this.sendTyping(false);
-                },
-                
-                // Grup mesajı gönder
-                sendGroupMessage() {
-                    const message = {
-                        type: 'text',
-                        sender: this.username,
-                        receiver: 'group',
-                        content: this.message,
-                        timestamp: Date.now()
-                    };
-                    
-                    this.groupMessages.push(message);
-                    
-                    // Tüm bağlı kullanıcılara gönder
-                    this.users.forEach(user => {
-                        if (user.conn) {
-                            try {
-                                user.conn.send({
-                                    type: 'message',
-                                    message: message
-                                });
-                            } catch (err) {
-                                console.error("Grup mesajı gönderilemedi:", err);
-                            }
-                        }
-                    });
-                },
-                
-                // Birebir mesaj gönder
-                sendPrivateMessage() {
-                    const user = this.users.find(u => u.peerId === this.activeChat);
-                    if (!user || !user.conn) return;
-                    
-                    const message = {
-                        type: 'text',
-                        sender: this.username,
-                        receiver: user.username,
-                        content: this.message,
-                        timestamp: Date.now()
-                    };
-                    
-                    this.messages.push(message);
-                    
-                    try {
-                        user.conn.send({
-                            type: 'message',
-                            message: message
-                        });
-                    } catch (err) {
-                        console.error("Mesaj gönderilemedi:", err);
-                    }
-                },
-                
-                // Yazma durumu gönder
-                sendTyping(isTyping) {
-                    if (!this.activeChat) return;
-                    
-                    if (this.activeChat === 'group') {
-                        // Gruba yazma durumunu gönder
-                        this.users.forEach(user => {
-                            if (user.conn) {
-                                try {
-                                    user.conn.send({
-                                        type: 'typing',
-                                        isTyping: isTyping,
-                                        sender: this.username
-                                    });
-                                } catch (err) {
-                                    console.error("Yazma durumu gönderilemedi:", err);
-                                }
-                            }
-                        });
-                    } else {
-                        // Birebir sohbette yazma durumunu gönder
-                        const user = this.users.find(u => u.peerId === this.activeChat);
-                        if (user && user.conn) {
-                            try {
-                                user.conn.send({
-                                    type: 'typing',
-                                    isTyping: isTyping
-                                });
-                            } catch (err) {
-                                console.error("Yazma durumu gönderilemedi:", err);
-                            }
-                        }
-                    }
-                },
-                
-                // Yazma durumunu yönet
-                handleTyping() {
-                    if (!this.activeChat) return;
-                    
-                    // Yazma durumunu gönder
-                    this.sendTyping(true);
-                    
-                    // Önceki zaman aşımını temizle
-                    if (this.typingTimeout) clearTimeout(this.typingTimeout);
-                    
-                    // 2 saniye sonra yazmayı durdur
-                    this.typingTimeout = setTimeout(() => {
-                        this.sendTyping(false);
-                    }, 2000);
-                },
-                
-                // Dosya yükleme tetikleyici
-                triggerFileUpload() {
-                    document.getElementById('file-upload').click();
-                },
-                
-                // Dosya yükleme işlemi
-                handleFileUpload(e) {
-                    this.fileToUpload = e.target.files[0];
-                    if (!this.fileToUpload) return;
-                    
-                    if (this.fileToUpload.size > MAX_FILE_SIZE) {
-                        this.connectionError = `Dosya boyutu 50MB'tan büyük olamaz (${this.formatFileSize(this.fileToUpload.size)})`;
-                        this.fileToUpload = null;
-                        return;
-                    }
-                    
-                    if (this.activeChat === 'group') {
-                        this.sendFileToGroup(this.fileToUpload);
-                    } else {
-                        this.sendFileToUser(this.fileToUpload);
-                    }
-                    
-                    e.target.value = ''; // Girişi sıfırla
-                },
-                
-                // Dosyayı gruba gönder
-                sendFileToGroup(file) {
-                    this.uploading = true;
-                    this.uploadProgress = 0;
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const fileData = e.target.result;
-                        const fileType = file.type.startsWith('image/') ? 'image' : 
-                                       file.type.startsWith('video/') ? 'video' : 'file';
-                        
-                        const fileMessage = {
-                            type: fileType,
-                            sender: this.username,
-                            receiver: 'group',
-                            fileName: file.name,
-                            fileSize: file.size,
-                            content: fileData,
-                            timestamp: Date.now()
-                        };
-                        
-                        // Önizleme için mesaj listesine ekle
-                        this.groupMessages.push(fileMessage);
-                        
-                        // Dosyayı parçalara ayır ve gönder
-                        const CHUNK_SIZE = 64 * 1024; // 64KB
-                        const totalChunks = Math.ceil(fileData.length / CHUNK_SIZE);
-                        let chunksSent = 0;
-                        
-                        const sendNextChunk = () => {
-                            const start = chunksSent * CHUNK_SIZE;
-                            const end = Math.min(start + CHUNK_SIZE, fileData.length);
-                            const chunk = fileData.slice(start, end);
-                            
-                            // Tüm bağlı kullanıcılara gönder
-                            let sendCount = 0;
-                            this.users.forEach(user => {
-                                if (user.conn) {
-                                    try {
-                                        user.conn.send({
-                                            type: 'file',
-                                            message: fileMessage,
-                                            chunk: chunk,
-                                            chunkIndex: chunksSent,
-                                            totalChunks: totalChunks
-                                        });
-                                        sendCount++;
-                                    } catch (err) {
-                                        console.error("Dosya parçası gönderilemedi:", err);
-                                    }
-                                }
-                            });
-                            
-                            if (sendCount > 0) {
-                                chunksSent++;
-                                this.uploadProgress = Math.floor((chunksSent / totalChunks) * 100);
-                                
-                                if (chunksSent < totalChunks) {
-                                    setTimeout(sendNextChunk, 0);
-                                } else {
-                                    this.uploading = false;
-                                }
-                            } else {
-                                this.uploading = false;
-                                this.connectionError = "Hiçbir kullanıcıya dosya gönderilemedi";
-                            }
-                        };
-                        
-                        sendNextChunk();
-                    };
-                    
-                    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                        reader.readAsDataURL(file);
-                    } else {
-                        reader.readAsBinaryString(file);
-                    }
-                },
-                
-                // Dosyayı kullanıcıya gönder
-                sendFileToUser(file) {
-                    const user = this.users.find(u => u.peerId === this.activeChat);
-                    if (!user || !user.conn) {
-                        this.connectionError = "Kullanıcı bağlı değil";
-                        return;
-                    }
-                    
-                    this.uploading = true;
-                    this.uploadProgress = 0;
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const fileData = e.target.result;
-                        const fileType = file.type.startsWith('image/') ? 'image' : 
-                                       file.type.startsWith('video/') ? 'video' : 'file';
-                        
-                        const fileMessage = {
-                            type: fileType,
-                            sender: this.username,
-                            receiver: user.username,
-                            fileName: file.name,
-                            fileSize: file.size,
-                            content: fileData,
-                            timestamp: Date.now()
-                        };
-                        
-                        // Önizleme için mesaj listesine ekle
-                        this.messages.push(fileMessage);
-                        
-                        // Dosyayı parçalara ayır ve gönder
-                        const CHUNK_SIZE = 64 * 1024; // 64KB
-                        const totalChunks = Math.ceil(fileData.length / CHUNK_SIZE);
-                        let chunksSent = 0;
-                        
-                        const sendNextChunk = () => {
-                            const start = chunksSent * CHUNK_SIZE;
-                            const end = Math.min(start + CHUNK_SIZE, fileData.length);
-                            const chunk = fileData.slice(start, end);
-                            
-                            try {
-                                user.conn.send({
-                                    type: 'file',
-                                    message: fileMessage,
-                                    chunk: chunk,
-                                    chunkIndex: chunksSent,
-                                    totalChunks: totalChunks
-                                });
-                                
-                                chunksSent++;
-                                this.uploadProgress = Math.floor((chunksSent / totalChunks) * 100);
-                                
-                                if (chunksSent < totalChunks) {
-                                    setTimeout(sendNextChunk, 0);
-                                } else {
-                                    this.uploading = false;
-                                }
-                            } catch (err) {
-                                console.error("Dosya gönderme hatası:", err);
-                                this.uploading = false;
-                                this.connectionError = "Dosya gönderilemedi";
-                            }
-                        };
-                        
-                        sendNextChunk();
-                    };
-                    
-                    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                        reader.readAsDataURL(file);
-                    } else {
-                        reader.readAsBinaryString(file);
-                    }
-                },
-                
-                // Dosya transferini işle
-                handleFileTransfer(conn, data) {
-                    // Dosya parçalarını birleştir
-                    if (!this.fileChunks) this.fileChunks = {};
-                    
-                    const fileKey = `${data.message.sender}-${data.message.timestamp}`;
-                    
-                    if (!this.fileChunks[fileKey]) {
-                        this.fileChunks[fileKey] = {
-                            received: 0,
-                            total: data.totalChunks,
-                            chunks: new Array(data.totalChunks),
-                            message: data.message
-                        };
-                    }
-                    
-                    this.fileChunks[fileKey].chunks[data.chunkIndex] = data.chunk;
-                    this.fileChunks[fileKey].received++;
-                    
-                    // Tüm parçalar alındı mı kontrol et
-                    if (this.fileChunks[fileKey].received === data.totalChunks) {
-                        const completeData = this.fileChunks[fileKey].chunks.join('');
-                        const completeMessage = this.fileChunks[fileKey].message;
-                        completeMessage.content = completeData;
-                        
-                        if (completeMessage.receiver === 'group') {
-                            this.groupMessages.push(completeMessage);
-                            if (this.activeChat !== 'group') {
-                                this.unreadGroupMessages++;
-                            }
-                        } else {
-                            this.messages.push(completeMessage);
-                            
-                            const user = this.users.find(u => u.peerId === conn.peer);
-                            if (user && this.activeChat !== conn.peer) {
-                                user.unreadMessages++;
-                            }
-                        }
-                        
-                        delete this.fileChunks[fileKey];
-                    }
-                },
-                
-                // Dosyayı indir
-                downloadFile(message) {
-                    let blob;
-                    
-                    if (message.type === 'image' || message.type === 'video') {
-                        // Data URL'den blob oluştur
-                        const byteString = atob(message.content.split(',')[1]);
-                        const mimeString = message.content.split(',')[0].split(':')[1].split(';')[0];
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-                        
-                        for (let i = 0; i < byteString.length; i++) {
-                            ia[i] = byteString.charCodeAt(i);
-                        }
-                        
-                        blob = new Blob([ab], { type: mimeString });
-                    } else {
-                        // Binary dosyalar için
-                        const byteCharacters = message.content;
-                        const byteNumbers = new Array(byteCharacters.length);
-                        
-                        for (let i = 0; i < byteCharacters.length; i++) {
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }
-                        
-                        const byteArray = new Uint8Array(byteNumbers);
-                        blob = new Blob([byteArray], { type: 'application/octet-stream' });
-                    }
-                    
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = message.fileName || 'dosya';
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }, 0);
-                },
-                
-                // Tam ekran medya göster
-                showFullscreen(mediaSrc) {
-                    this.fullscreenMedia = mediaSrc;
-                    this.fullscreenMediaType = mediaSrc.startsWith('data:image') ? 'image' : 'video';
-                },
-                
-                // Bağlantıyı kes
-                disconnect() {
-                    if (this.peer) {
-                        this.peer.destroy();
-                    }
-                    this.screen = 'login';
-                    this.users = [];
-                    this.activeChat = null;
-                    this.groupMembers = [];
-                }
-            }
+  <!-- Chat Screen -->
+  <div id="chat" v-if="screen === 'chat'" class="container">
+    <div class="row">
+      <div class="col s12 m4">
+        <h5>Welcome, {{ usernameInput }}</h5>
+        <img :src="avatar" class="chat-avatar" style="width:64px;height:64px;" />
+        <form v-on:submit="submitConnection" class="row">
+          <div class="input-field col s8">
+            <input :disabled="loading" id="target_id" type="text" v-model="targetIdInput" />
+            <label for="target_id">Target username</label>
+          </div>
+          <button class="btn waves-effect col s4" type="submit">
+            Connect
+          </button>
+        </form>
+        <button class="btn red" v-on:click="disconnectPeer">Disconnect</button>
+        <div>
+          <h6>Connected Users</h6>
+          <p><i class="material-icons">portrait</i> {{ usernameInput }}</p>
+          <p v-for="peerId in peerIds">
+            <i class="material-icons">portrait</i> {{ getUsername(peerId) }}
+          </p>
+        </div>
+      </div>
+      <div class="col s12 m8">
+        <h5>Chatbox</h5>
+        <div id="chatbox">
+          <div v-for="chat in chats" class="chat-entry">
+            <p>
+              <img v-if="chat.avatar" :src="chat.avatar" class="chat-avatar" />
+              <strong>{{ chat.sender }}:</strong> {{ chat.message }}
+            </p>
+            <div class="file-preview" v-if="chat.file">
+              <template v-if="chat.file.type.startsWith('image')">
+                <img :src="chat.file.url" />
+              </template>
+              <template v-else-if="chat.file.type.startsWith('video')">
+                <video controls :src="chat.file.url"></video>
+              </template>
+              <template v-else>
+                <a :href="chat.file.url" target="_blank">Download File ({{ chat.file.name }})</a>
+              </template>
+            </div>
+          </div>
+        </div>
+        <form v-on:submit="submitChat" class="row">
+          <div class="input-field col s8">
+            <input id="chat_message" type="text" v-model="chatMessageInput" />
+            <label for="chat_message">Your message</label>
+          </div>
+          <div class="file-field input-field col s3">
+            <div class="btn grey">
+              <span>File</span>
+              <input type="file" @change="onFileChange" />
+            </div>
+            <div class="file-path-wrapper">
+              <input class="file-path validate" type="text" placeholder="Optional file">
+            </div>
+          </div>
+          <button class="btn-floating btn-large red col s1" type="submit">
+            <i class="material-icons">send</i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const appPrefix = "secure-p2p-multichat-";
+const oldChats = localStorage.getItem("chats");
+const chats = oldChats ? JSON.parse(oldChats) : [];
+
+new Vue({
+  el: "#app",
+  data: {
+    screen: "login",
+    usernameInput: localStorage.getItem("username") || "",
+    avatar: localStorage.getItem("avatar") || "",
+    peerError: "",
+    loading: false,
+    peer: {},
+    targetIdInput: "",
+    peerIds: [],
+    connections: {},
+    chats,
+    chatMessageInput: "",
+    attachedFile: null
+  },
+  watch: {
+    chats() {
+      const box = document.getElementById("chatbox");
+      if (box) box.scrollTop = box.scrollHeight;
+      localStorage.setItem("chats", JSON.stringify(this.chats));
+    }
+  },
+  methods: {
+    getPeerId(username) {
+      return appPrefix + username;
+    },
+    getUsername(peerId) {
+      return peerId.slice(appPrefix.length);
+    },
+    addConnection(conn) {
+      this.connections[conn.peer] = conn;
+      this.updatePeerIds();
+    },
+    removeConnection(conn) {
+      delete this.connections[conn.peer];
+      this.updatePeerIds();
+    },
+    updatePeerIds() {
+      this.peerIds = Object.keys(this.connections);
+    },
+    disconnectPeer() {
+      this.peer.disconnect();
+    },
+    onAvatarChange(event) {
+      const file = event.target.files[0];
+      if (file && file.size < 1024 * 1024 * 5) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          this.avatar = e.target.result;
+          localStorage.setItem("avatar", this.avatar);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert("Avatar must be less than 5MB");
+      }
+    },
+    onFileChange(event) {
+      const file = event.target.files[0];
+      if (file && file.size <= 1024 * 1024 * 50) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          this.attachedFile = {
+            name: file.name,
+            type: file.type,
+            url: e.target.result
+          };
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert("File must be under 50MB");
+        this.attachedFile = null;
+      }
+    },
+    configureConnection(conn) {
+      conn.on("data", data => {
+        if (data.type === "connections") {
+          data.peerIds.forEach(pid => {
+            if (!this.connections[pid]) this.initiateConnection(pid);
+          });
+        } else if (data.type === "chat") {
+          this.receiveChat(data.chat);
+        }
+      });
+      conn.on("close", () => this.removeConnection(conn));
+      conn.on("error", () => this.removeConnection(conn));
+      conn.metadata.peerIds.forEach(pid => {
+        if (!this.connections[pid]) this.initiateConnection(pid);
+      });
+    },
+    initiateConnection(peerId) {
+      if (!this.peerIds.includes(peerId) && peerId !== this.peer.id) {
+        this.loading = true;
+        const conn = this.peer.connect(peerId, {
+          metadata: { peerIds: this.peerIds },
+          serialization: "json"
         });
-    </script>
+        this.configureConnection(conn);
+        conn.on("open", () => {
+          this.addConnection(conn);
+          if (this.getUsername(conn.peer) === this.targetIdInput) {
+            this.targetIdInput = "";
+            this.loading = false;
+          }
+        });
+      }
+    },
+    createPeer() {
+      this.peer = new Peer(this.getPeerId(this.usernameInput));
+      this.peer.on("open", () => {
+        this.screen = "chat";
+        this.loading = false;
+      });
+      this.peer.on("error", error => {
+        if (error.type === "peer-unavailable") {
+          this.peerError = `${this.targetIdInput} unreachable.`;
+        } else if (error.type === "unavailable-id") {
+          this.peerError = `${this.usernameInput} already taken.`;
+        } else {
+          this.peerError = error;
+        }
+        this.loading = false;
+      });
+      this.peer.on("connection", conn => {
+        if (!this.peerIds.includes(conn.peer)) {
+          this.configureConnection(conn);
+          conn.on("open", () => {
+            this.addConnection(conn);
+            conn.send({ type: "connections", peerIds: this.peerIds });
+          });
+        }
+      });
+    },
+    submitLogin(e) {
+      e.preventDefault();
+      if (this.usernameInput.length > 0 && !this.loading) {
+        this.loading = true;
+        localStorage.setItem("username", this.usernameInput);
+        this.createPeer();
+      }
+    },
+    submitConnection(e) {
+      e.preventDefault();
+      this.initiateConnection(this.getPeerId(this.targetIdInput));
+    },
+    receiveChat(chat) {
+      this.chats.push(chat);
+    },
+    submitChat(e) {
+      e.preventDefault();
+      if (this.chatMessageInput.trim().length > 0 || this.attachedFile) {
+        const chat = {
+          sender: this.usernameInput,
+          message: this.chatMessageInput,
+          timestamp: Date.now(),
+          avatar: this.avatar,
+          file: this.attachedFile
+        };
+        this.receiveChat(chat);
+        Object.values(this.connections).forEach(conn =>
+          conn.send({ type: "chat", chat })
+        );
+        this.chatMessageInput = "";
+        this.attachedFile = null;
+      }
+    }
+  }
+});
+</script>
 </body>
 </html>
