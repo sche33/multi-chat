@@ -1,197 +1,434 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Uygulaması</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>💬 Tox-Style Chat</title>
+
+  <!-- Material Icons & Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-storage-compat.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif; }
-    body, html { height:100%; }
-    #app { display:flex; height:100vh; }
-    /* Sol Panel */
-    #leftPanel { width:300px; background:#fafafa; border-right:1px solid #ddd; display:flex; flex-direction:column; }
-    #userInfo { display:flex; align-items:center; padding:10px; background:#f0f0f0; }
-    #myPhoto { width:50px; height:50px; border:2px solid #888; border-radius:50%; background:#ccc; cursor:pointer; object-fit:cover; }
-    #userInfo input { margin-left:10px; flex:1; padding:6px; }
-    #userInfo button { margin-left:5px; }
-    #addFriend { padding:10px; border-bottom:1px solid #ddd; }
-    #addFriend input { width:calc(100% - 80px); padding:6px; }
-    #addFriend button { width:60px; margin-left:5px; }
-    #friendsList { flex:1; overflow-y:auto; list-style:none; }
-    #friendsList li { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
-    #friendsList li:hover { background:#eef; }
-    /* Sağ Panel */
-    #chat { flex:1; display:flex; flex-direction:column; }
-    #chatHeader { padding:10px; background:#f0f0f0; border-bottom:1px solid #ddd; }
-    #messages { flex:1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; background:white; }
-    .message { margin-bottom:8px; max-width:70%; padding:8px; border-radius:10px; word-wrap:break-word; }
-    .from-me { background:#dcf8c6; align-self:flex-end; }
-    .from-them { background:#f1f0f0; align-self:flex-start; }
-    #inputArea { display:flex; padding:10px; border-top:1px solid #ddd; }
-    #messageInput { flex:1; padding:8px; }
-    #sendBtn { margin-left:5px; padding:8px 12px; }
+    /* ----------------- Genel Stil ----------------- */
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:"Red Hat Display",sans-serif;
+      background:#f5f5f5;
+      color:#333;
+      height:100vh;
+      display:flex;
+    }
+    /* ------------- Sol Panel (Kullanıcı & Arkadaş) ------------- */
+    #sidebar {
+      width:280px;
+      background:#fff;
+      border-right:1px solid #ddd;
+      display:flex;
+      flex-direction:column;
+      padding:16px;
+    }
+    #profile {
+      text-align:center;
+      margin-bottom:24px;
+    }
+    #profile-img {
+      width:80px; height:80px;
+      border-radius:50%;
+      border:2px solid #888;
+      object-fit:cover;
+      cursor:pointer;
+    }
+    #profile input[type=file] { display:none; }
+    #username { width:100%; padding:8px; margin-top:8px; border:1px solid #ccc; border-radius:4px; }
+    #saveProfile { margin-top:8px; width:100%; }
+
+    #addFriend {
+      margin-bottom:16px;
+    }
+    #addFriend input {
+      width: calc(100% - 48px);
+      padding:6px;
+      border:1px solid #ccc;
+      border-radius:4px;
+    }
+    #addFriend button {
+      width:40px;
+      height:36px;
+      margin-left:4px;
+      vertical-align:top;
+    }
+    #friendsList {
+      flex:1;
+      overflow-y:auto;
+      list-style:none;
+    }
+    #friendsList li {
+      padding:8px;
+      border-bottom:1px solid #eee;
+      cursor:pointer;
+    }
+    #friendsList li.active { background:#e0f7fa; }
+    /* --------------- Sağ Panel (Sohbet) --------------- */
+    #chatPanel {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+    }
+    #tabs {
+      display:flex;
+      background:#fff;
+      border-bottom:1px solid #ddd;
+    }
+    #tabs button {
+      flex:1;
+      padding:12px;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      font-weight:600;
+    }
+    #tabs button.active {
+      border-bottom:3px solid #0288d1;
+      color:#0288d1;
+    }
+    #chatHeader {
+      padding:12px;
+      background:#fafafa;
+      border-bottom:1px solid #eee;
+      font-weight:500;
+    }
+    .chatWindow {
+      flex:1;
+      padding:16px;
+      background:#e8f5e9;
+      overflow-y:auto;
+    }
+    .chatWindow.private { background:#fff3e0; }
+    .message {
+      margin:8px 0;
+      max-width:70%;
+      padding:8px 12px;
+      border-radius:16px;
+      position:relative;
+      word-wrap:break-word;
+    }
+    .message.me {
+      background:#0288d1;
+      color:#fff;
+      margin-left:auto;
+    }
+    .message.them {
+      background:#e0e0e0;
+      color:#000;
+      margin-right:auto;
+    }
+    .message .meta {
+      font-size:10px;
+      opacity:0.7;
+      position:absolute;
+      bottom:-14px;
+      right:8px;
+    }
+    #inputArea {
+      display:flex;
+      padding:12px;
+      background:#fff;
+      border-top:1px solid #ddd;
+    }
+    #inputArea input[type=text] {
+      flex:1;
+      padding:10px;
+      border:1px solid #ccc;
+      border-radius:4px;
+    }
+    #inputArea input[type=file] { display:none; }
+    #inputArea button {
+      margin-left:8px;
+      padding:0 12px;
+      border:none;
+      background:#0288d1;
+      color:#fff;
+      border-radius:4px;
+      cursor:pointer;
+    }
+    #inputArea .attach-btn {
+      background:transparent;
+      color:#555;
+    }
   </style>
-  <!-- Firebase SDK'ları CDN -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-<div id="app">
-  <!-- Sol Panel: Kullanıcı ve Arkadaş Listesi -->
-  <div id="leftPanel">
-    <div id="userInfo">
-      <img id="myPhoto" title="Profil resminizi yükleyin" alt="Profil">
-      <input type="text" id="usernameInput" placeholder="Kullanıcı adınız">
-      <button id="setNameBtn">Kaydet</button>
+
+  <!-- =========== Sol Panel =========== -->
+  <div id="sidebar">
+    <div id="profile">
+      <label for="profile-input">
+        <img id="profile-img" src="" title="Profil fotoğrafını değiştirmek için tıkla"/>
+      </label>
+      <input type="file" id="profile-input" accept="image/*"/>
+      <input type="text" id="username" placeholder="Kullanıcı adın"/>
+      <button id="saveProfile">Kaydet</button>
     </div>
+
+    <!-- Arkadaş Ekle -->
     <div id="addFriend">
-      <input type="text" id="friendIdInput" placeholder="Arkadaş ID'si">
-      <button id="addFriendBtn">Ekle</button>
+      <input type="text" id="friendIdInput" placeholder="Arkadaş ID’si"/>
+      <button id="addFriendBtn" title="Ekle"><span class="material-icons">person_add</span></button>
     </div>
+
+    <!-- Arkadaş Listesi -->
     <ul id="friendsList"></ul>
   </div>
-  <!-- Sağ Panel: Sohbet -->
-  <div id="chat">
-    <div id="chatHeader">Arkadaş: <span id="friendName">-</span></div>
-    <div id="messages"></div>
+
+  <!-- =========== Sağ Panel =========== -->
+  <div id="chatPanel">
+    <!-- Sekmeler -->
+    <div id="tabs">
+      <button data-tab="general" class="active">Genel</button>
+      <button data-tab="private">Özel</button>
+    </div>
+
+    <!-- Başlık -->
+    <div id="chatHeader">Genel Sohbet</div>
+
+    <!-- Genel Sohbet Penceresi -->
+    <div id="generalWindow" class="chatWindow"></div>
+    <!-- Özel Sohbet Penceresi -->
+    <div id="privateWindow" class="chatWindow private" style="display:none;"></div>
+
+    <!-- Mesaj Giriş Alanı -->
     <div id="inputArea">
-      <input type="text" id="messageInput" placeholder="Mesaj yazın...">
+      <button class="attach-btn" id="attachBtn" title="Dosya Ekle"><span class="material-icons">attach_file</span></button>
+      <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.zip"/>
+      <input type="text" id="messageInput" placeholder="Mesaj yaz..."/>
       <button id="sendBtn">Gönder</button>
     </div>
   </div>
-</div>
-
-<!-- Gizli dosya seçici: Profil resmi yükleme -->
-<input type="file" id="photoInput" accept="image/*" style="display:none">
 
 <script>
-  // Firebase başlatma (kendi config bilgilerinizle doldurun)
+(function(){
+  // -------- Firebase Başlatma --------
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyD30unp7ap6R6sJoU8EEKRkqlyK-dPjuqM",
+    authDomain: "genelchatprojesi.firebaseapp.com",
+    databaseURL: "https://genelchatprojesi-default-rtdb.firebaseio.com",
+    projectId: "genelchatprojesi",
+    storageBucket: "genelchatprojesi.appspot.com",
+    messagingSenderId: "751359781972",
+    appId: "1:751359781972:web:da28a4695f9571736191c1"
   };
   firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const storage = firebase.storage();
 
-  // Kullanıcı bilgileri (localStorage)
-  if (!localStorage.getItem('userId')) {
-    // Güvenli UUID oluşturma (HTTPS gerektirir) veya basit rastgele ID
-    const id = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2,9));
-    localStorage.setItem('userId', id);
-  }
-  const userId = localStorage.getItem('userId');
-  let username = localStorage.getItem('username') || '';
-  if (!username) {
-    username = prompt("Kullanıcı adınızı girin:");
-    if (username) localStorage.setItem('username', username);
-  }
-  document.getElementById('usernameInput').value = username;
+  // -------- DOM Elemanları --------
+  const profileImg   = document.getElementById('profile-img');
+  const profileIn    = document.getElementById('profile-input');
+  const usernameIn   = document.getElementById('username');
+  const saveProfile  = document.getElementById('saveProfile');
+  const friendIn     = document.getElementById('friendIdInput');
+  const addFriendBtn = document.getElementById('addFriendBtn');
+  const friendsList  = document.getElementById('friendsList');
+  const tabs         = document.querySelectorAll('#tabs button');
+  const header       = document.getElementById('chatHeader');
+  const genWin       = document.getElementById('generalWindow');
+  const privWin      = document.getElementById('privateWindow');
+  const attachBtn    = document.getElementById('attachBtn');
+  const fileInput    = document.getElementById('fileInput');
+  const msgInput     = document.getElementById('messageInput');
+  const sendBtn      = document.getElementById('sendBtn');
 
-  // Profil resmi yükleme
-  const myPhoto = document.getElementById('myPhoto');
-  const photoInput = document.getElementById('photoInput');
-  // Eğer daha önce yüklenmişse göster
-  if (localStorage.getItem('profilePic')) {
-    myPhoto.src = localStorage.getItem('profilePic');
+  // -------- LocalStorage’dan Verileri Al --------
+  let userId   = localStorage.getItem('userId');
+  let username = localStorage.getItem('username');
+  let profilePic = localStorage.getItem('profilePic');
+  let friends  = JSON.parse(localStorage.getItem('friends')||'[]');
+
+  // -------- Otomatik User ID Oluştur --------
+  if(!userId){
+    userId = (crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).substr(2,9));
+    localStorage.setItem('userId', userId);
   }
-  // Fotoğraf tıklayınca dosya seçici aç
-  myPhoto.addEventListener('click', () => photoInput.click());
-  photoInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const dataUrl = event.target.result;
-      localStorage.setItem('profilePic', dataUrl);
-      myPhoto.src = dataUrl;
+  usernameIn.value = username || '';
+  if(profilePic) profileImg.src = profilePic;
+
+  // -------- Profil Kaydetme --------
+  saveProfile.onclick = () => {
+    username = usernameIn.value.trim()||username||'Anonim';
+    localStorage.setItem('username', username);
+    alert('Profil güncellendi!');
+  };
+  profileImg.onclick = () => profileIn.click();
+  profileIn.onchange = e => {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      profilePic = ev.target.result;
+      profileImg.src  = profilePic;
+      localStorage.setItem('profilePic', profilePic);
     };
-    reader.readAsDataURL(file);
-  });
+    r.readAsDataURL(f);
+  };
 
-  // Kullanıcı adı güncelleme
-  const setNameBtn = document.getElementById('setNameBtn');
-  setNameBtn.addEventListener('click', () => {
-    const input = document.getElementById('usernameInput');
-    if (input.value.trim()) {
-      localStorage.setItem('username', input.value.trim());
-      username = input.value.trim();
-      alert("Kullanıcı adı güncellendi.");
-    }
-  });
-
-  // Arkadaş listesi yönetimi
-  let friends = JSON.parse(localStorage.getItem('friends') || '[]');
-  const friendsListEl = document.getElementById('friendsList');
-  function renderFriends() {
-    friendsListEl.innerHTML = '';
-    friends.forEach(fid => {
+  // -------- Arkadaş Listesi --------
+  function renderFriends(){
+    friendsList.innerHTML = '';
+    friends.forEach(fid=>{
       const li = document.createElement('li');
       li.textContent = fid;
-      li.addEventListener('click', () => selectFriend(fid));
-      friendsListEl.appendChild(li);
+      li.onclick = ()=>{
+        currentTab = 'private';
+        switchTab();
+        selectFriend(fid);
+      };
+      friendsList.appendChild(li);
     });
   }
-  renderFriends();
-
-  document.getElementById('addFriendBtn').addEventListener('click', () => {
-    const friendId = document.getElementById('friendIdInput').value.trim();
-    if (!friendId) { alert("ID girin."); return; }
-    if (friendId === userId) { alert("Kendi ID'niz ile arkadaş ekleyemezsiniz."); return; }
-    if (friends.includes(friendId)) { alert("Bu ID zaten listede."); return; }
-    friends.push(friendId);
+  addFriendBtn.onclick = ()=>{
+    const fid = friendIn.value.trim();
+    if(!fid||fid===userId) return alert('Geçerli bir ID girin.');
+    if(friends.includes(fid)) return alert('Zaten ekli.');
+    friends.push(fid);
     localStorage.setItem('friends', JSON.stringify(friends));
     renderFriends();
-    document.getElementById('friendIdInput').value = '';
+    friendIn.value = '';
+  };
+  renderFriends();
+
+  // -------- Sekme Geçişi --------
+  let currentTab = 'general';
+  tabs.forEach(btn=>{
+    btn.onclick = ()=>{
+      currentTab = btn.dataset.tab;
+      switchTab();
+    };
   });
-
-  // Sohbet işlemleri
-  let currentFriend = null;
-  let chatRef = null;
-  function getChatId(id1, id2) {
-    // Karakter dizisi sıralı birleşim (örn. "a_b")
-    return [id1, id2].sort().join('_');
-  }
-  function selectFriend(friendId) {
-    currentFriend = friendId;
-    document.getElementById('friendName').textContent = friendId;
-    document.getElementById('messages').innerHTML = '';
-    // Önceki dinleyiciyi kapat
-    if (chatRef) chatRef.off();
-    // Yeni dinleyici
-    const chatId = getChatId(userId, friendId);
-    chatRef = firebase.database().ref('messages/' + chatId);
-    chatRef.on('child_added', snapshot => {
-      const msg = snapshot.val();
-      const msgDiv = document.createElement('div');
-      msgDiv.textContent = msg.text;
-      msgDiv.classList.add('message');
-      if (msg.senderId === userId) {
-        msgDiv.classList.add('from-me');
-      } else {
-        msgDiv.classList.add('from-them');
-      }
-      document.getElementById('messages').appendChild(msgDiv);
-      // Scroll en alta
-      const messagesDiv = document.getElementById('messages');
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
+  function switchTab(){
+    tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===currentTab));
+    header.textContent = currentTab==='general' ? 'Genel Sohbet' : 'Özel Sohbet';
+    genWin.style.display = currentTab==='general' ? 'flex' : 'none';
+    privWin.style.display= currentTab==='private'? 'flex' : 'none';
   }
 
-  // Mesaj gönderme
-  document.getElementById('sendBtn').addEventListener('click', () => {
-    const text = document.getElementById('messageInput').value.trim();
-    if (!text || !currentFriend) return;
-    const chatId = getChatId(userId, currentFriend);
-    firebase.database().ref('messages/' + chatId).push({
+  // -------- Mesaj Gönderme --------
+  attachBtn.onclick = ()=> fileInput.click();
+  sendBtn.onclick = sendMessage;
+  fileInput.onchange = ()=> sendMessage(); // dosya yüklendiğinde de gönder
+
+  function sendMessage(){
+    const txt = msgInput.value.trim();
+    const file = fileInput.files[0];
+    if(!txt && !file) return;
+
+    const now = Date.now();
+    const baseRef = currentTab==='general'
+      ? db.ref('chats/general')
+      : db.ref('chats/private/' + sortedChatId);
+
+    // önce dosya yükle, sonra mesajı DB’ye it:
+    if(file){
+      const ext = file.name.split('.').pop();
+      const path = `${currentTab}/${userId}_${now}.${ext}`;
+      const uploadTask = storage.ref(path).put(file);
+      uploadTask.on('state_changed',null,console.error, ()=>{
+        uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+          pushMsg(baseRef, txt, url, file.type);
+        });
+      });
+    } else {
+      pushMsg(baseRef, txt, null, null);
+    }
+    msgInput.value=''; fileInput.value=null;
+  }
+
+  function pushMsg(ref, text, fileUrl, fileType){
+    ref.push({
       senderId: userId,
-      text: text
+      senderName: username||'Anonim',
+      senderPic: profilePic||'',
+      text: text||'',
+      fileUrl:fileUrl||'',
+      fileType:fileType||'',
+      timestamp: Date.now()
     });
-    document.getElementById('messageInput').value = '';
+  }
+
+  // -------- Genel Sohbet Dinleyici --------
+  db.ref('chats/general').on('child_added',snap=>{
+    renderMessage(snap.val(), genWin);
   });
+
+  // -------- Özel Sohbet Dinleme --------
+  let sortedChatId = '';
+  function selectFriend(fid){
+    sortedChatId = [userId, fid].sort().join('_');
+    privWin.innerHTML='';
+    // önceki dinleyiciyi kapat:
+    db.ref('chats/private').off();
+    // yeni dinleyici
+    db.ref('chats/private/'+sortedChatId)
+      .on('child_added',snap=> renderMessage(snap.val(), privWin));
+  }
+
+  // -------- Mesajı DOM’a Ekle --------
+  function renderMessage(msg, container){
+    const div = document.createElement('div');
+    div.className = 'message ' + (msg.senderId===userId?'me':'them');
+    // Profil resmi
+    if(msg.senderPic){
+      const img = document.createElement('img');
+      img.src=msg.senderPic;
+      img.style.width='24px';
+      img.style.height='24px';
+      img.style.borderRadius='50%';
+      img.style.verticalAlign='middle';
+      img.style.marginRight='6px';
+      div.appendChild(img);
+    }
+    // Metin
+    const span = document.createElement('span');
+    span.innerText = msg.text;
+    div.appendChild(span);
+    // Dosya
+    if(msg.fileUrl){
+      const br = document.createElement('br');
+      div.appendChild(br);
+      if(msg.fileType.startsWith('image')){
+        const i = document.createElement('img');
+        i.src=msg.fileUrl;
+        i.style.maxWidth='200px';
+        div.appendChild(i);
+      } else if(msg.fileType.startsWith('video')){
+        const v = document.createElement('video');
+        v.src=msg.fileUrl; v.controls=true; v.style.maxWidth='200px';
+        div.appendChild(v);
+      } else {
+        const a = document.createElement('a');
+        a.href=msg.fileUrl; a.target='_blank';
+        a.innerText='Dosyayı İndir';
+        div.appendChild(a);
+      }
+    }
+    // Zaman
+    const meta = document.createElement('div');
+    meta.className='meta';
+    meta.innerText = new Date(msg.timestamp).toLocaleTimeString();
+    div.appendChild(meta);
+
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // İlk sekme ayarı
+  switchTab();
+})();
 </script>
+
 </body>
 </html>
